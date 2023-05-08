@@ -9,13 +9,16 @@
 
 using namespace kchart;
 
+
 void LoadKLineData(const char *file, DataSet& data);
 
-/// 计算指标数据并绑定图形. 注意：数据集中需包含 CLOSE 数据
+/// 计算指标数据并绑定图形. 注意：以下指标计算依赖 CLOSE 列数据.
 void MA(DataSet& data, GraphArea *area, int num);
 void MACD(DataSet& data, GraphArea *area);
 
 void MessageLoop();
+
+KChartWnd *wnd = NULL;
 
 int WINAPI WinMain(
     HINSTANCE hInstance,
@@ -24,10 +27,11 @@ int WINAPI WinMain(
     int       nShowCmd
 )
 {
-    KChartWnd *wnd = new KChartWnd();
+    wnd = new KChartWnd();
     wnd->CreateWin(NULL);
 
-    // 创建图形绘制区域
+
+    /// 创建图形绘制区域
     GraphArea *mainArea = wnd->CreateArea(0.7f);
     GraphArea *volumeArea = wnd->CreateArea(0.2f);
     GraphArea *indiArea = wnd->CreateArea(0.2f);
@@ -35,11 +39,13 @@ int WINAPI WinMain(
     volumeArea->GetLeftAxis()->SetTransformFn(ToStringWithUnit);
     volumeArea->GetRightAxis()->SetTransformFn(ToStringWithUnit);
 
-    // 添加数据
+
+    /// 绑定数据
     DataSet& data = wnd->DataRef();
     LoadKLineData("SH000001.csv", data);
 
-    // 添加图形
+
+    /// 添加图形
     mainArea->AddGraphics(new KLineGraph(data));
     MA(data, mainArea, 5);
     MA(data, mainArea, 10);
@@ -51,9 +57,8 @@ int WINAPI WinMain(
 
     MACD(data, indiArea);
 
-    wnd->Show(TRUE);
-    UpdateWindow(wnd->Handle());
 
+    wnd->Show(TRUE);
     MessageLoop();
     return 0;
 }
@@ -62,14 +67,16 @@ void LoadKLineData(const char *file, DataSet& data)
 {
 //  symbol,date,open,high,low,close,volume,count
 //  SH000001,202201040000,768.8720,803.7480,767.4470,803.7480,302111788,2928518397
+//  SH000001,202201050000,768.8720,803.7480,767.4470,803.7480,302111788,2928518397
+//  ...
     std::ifstream ifs(file, std::ios::binary);
     assert(ifs.is_open());
 
-    ColumnKey *open  = data.AddCol("OPEN");
-    ColumnKey *high  = data.AddCol("HIGH");
-    ColumnKey *low   = data.AddCol("LOW");
-    ColumnKey *close = data.AddCol("CLOSE");
-    ColumnKey *vol   = data.AddCol("VOLUME");
+    ColumnKey open  = data.AddCol("OPEN");
+    ColumnKey high  = data.AddCol("HIGH");
+    ColumnKey low   = data.AddCol("LOW");
+    ColumnKey close = data.AddCol("CLOSE");
+    ColumnKey vol   = data.AddCol("VOLUME");
 
     const int bufSize = 1024;
     char buf[bufSize];
@@ -89,11 +96,11 @@ void LoadKLineData(const char *file, DataSet& data)
 
         data.AddRow(1);
 
-        data[open->index] [row] = fields[2].toFloat();
-        data[high->index] [row] = fields[3].toFloat();
-        data[low->index]  [row] = fields[4].toFloat();
-        data[close->index][row] = fields[5].toFloat();
-        data[vol->index]  [row] = fields[6].toFloat();
+        data[open] [row] = fields[2].toFloat();
+        data[high] [row] = fields[3].toFloat();
+        data[low]  [row] = fields[4].toFloat();
+        data[close][row] = fields[5].toFloat();
+        data[vol]  [row] = fields[6].toFloat();
 
         row++;
     }
@@ -101,27 +108,25 @@ void LoadKLineData(const char *file, DataSet& data)
 
 void MA(DataSet& data, GraphArea *area, int num)
 {
-    ColumnKey* close = data.FindCol("CLOSE");
+    ColumnKey close = data.FindCol("CLOSE");
 
-    ColumnKey* ma = data.AddCol("MA" + Str::ToString(num));
+    ColumnKey ma = data.AddCol("MA" + Str::ToString(num));
     int row = data.RowCount();
 
     DataType closeSum = 0;
+
     int i = 0;
-    for (; i < num; i++)
+    int off = num - 1;
+    for (; i < off; i++)
     {
-        closeSum += data[close->index][i];
-        data[ma->index][i] = NAN;
+        closeSum += data[close][i];
+        data[ma][i] = NAN;
     }
 
-    i--;
-
-    data[ma->index][i] = closeSum / DataType(num);
-
-    for (i = i+1; i < row; i++) {
-        closeSum += data[close->index][i];
-        closeSum -= data[close->index][i-num];
-        data[ma->index][i] = closeSum / DataType(num);
+    for (; i < row; i++) {
+        closeSum += data[close][i];
+        data[ma][i] = closeSum / DataType(num);
+        closeSum -= data[close][i-off];
     }
 
     area->AddGraphics(new PolyLineGraph(ma));
@@ -129,11 +134,11 @@ void MA(DataSet& data, GraphArea *area, int num)
 
 void MACD(DataSet& data, GraphArea *area)
 {
-    ColumnKey *close = data.FindCol("CLOSE");
+    ColumnKey close = data.FindCol("CLOSE");
 
-    ColumnKey *dif   = data.AddCol("DIF");
-    ColumnKey *dea   = data.AddCol("DEA");
-    ColumnKey *macd  = data.AddCol("MACD");
+    ColumnKey dif   = data.AddCol("DIF");
+    ColumnKey dea   = data.AddCol("DEA");
+    ColumnKey macd  = data.AddCol("MACD");
 
     DataType n1 = 12;
     DataType sc11 = (n1 - 1) / (n1 + 1);
@@ -149,20 +154,21 @@ void MACD(DataSet& data, GraphArea *area)
     for (int i = 0; i < data.RowCount(); i++)
     {
         // EMA(n1) = 前一日EMA(n1)×(n1-1)/(n1+1) + 今日收盘价×2/(n1+1)
-        preEMA1 = preEMA1 * sc11 + data[close->index][i] * sc12;
+        preEMA1 = preEMA1 * sc11 + data[close][i] * sc12;
         // EMA(e2) = 前一日EMA(e2)×(n2-1)/(n2+1) + 今日收盘价×2/(n2+1)
-        preEMA2 = preEMA2 * sc21 + data[close->index][i] * sc22;
+        preEMA2 = preEMA2 * sc21 + data[close][i] * sc22;
         // DIF = 今日EMA(n1) － 今日EMA(n2)
         DataType difv = preEMA1 - preEMA2;
         // 今日DEA = 前一日DEA×(n3-1)/(n3+1) + 今日DIF×2/(n3+1)
         preDEA = preDEA * sc31 + difv * sc32;
 
-        data[dif->index][i]  = difv;
-        data[dea->index][i]  = preDEA;
-        data[macd->index][i] = (difv - preDEA) * 2;
+        data[dif] [i]  = difv;
+        data[dea] [i]  = preDEA;
+        data[macd][i] = (difv - preDEA) * 2;
     }
 
     area->SetCentralAxis(0);
+
     area->AddGraphics(new HistogramGraph(macd));
     area->AddGraphics(new PolyLineGraph(dif));
     area->AddGraphics(new PolyLineGraph(dea));
@@ -179,5 +185,18 @@ void MessageLoop()
         if (msg.message == WM_QUIT
          || msg.message == WM_CLOSE)
             break;
+
+        if (msg.message == WM_KEYDOWN) {
+            if (msg.wParam == VK_UP)
+            {
+                wnd->Zoom(1);
+                wnd->Invalidate();
+            }
+            else if (msg.wParam == VK_DOWN)
+            {
+                wnd->Zoom(-1);
+                wnd->Invalidate();
+            }
+        }
     }
 }

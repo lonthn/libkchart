@@ -27,10 +27,10 @@ public:
 
     virtual void Paint(
         GraphContext *gctx,
-        DrawData& data
+        const DrawData &data
     ) = 0;
 
-    std::vector<ColumnKey*> cids;
+    std::vector<ColumnKey> cids;
     DataType centralAxis;
 };
 
@@ -69,7 +69,7 @@ public:
 
     void Paint(
         GraphContext *gctx,
-        DrawData& data
+        const DrawData &data
     ) override;
 };
 
@@ -93,7 +93,7 @@ public:
 
     void Paint(
         GraphContext *gctx,
-        DrawData& data
+        const DrawData &data
     ) override;
 };
 
@@ -101,7 +101,7 @@ class PolyLineGraph : public Graphics {
 public:
     Color LineColor;
 
-    explicit PolyLineGraph(ColumnKey* col)
+    explicit PolyLineGraph(ColumnKey col)
     : Graphics(1)
     , LineColor(0xFFFFFFFF)
     {
@@ -116,7 +116,7 @@ public:
 
     void Paint(
         GraphContext *gctx,
-        DrawData& data
+        const DrawData &data
     ) override;
 };
 
@@ -128,7 +128,7 @@ public:
     Color UpColor;
     Color DownColor;
 
-    explicit HistogramGraph(ColumnKey *key)
+    explicit HistogramGraph(ColumnKey key)
     : Graphics(1)
     {
         UpColor     = 0xFFFF4A4A;
@@ -140,7 +140,7 @@ public:
 
     void Paint(
         GraphContext *gctx,
-        DrawData& data
+        const DrawData &data
     ) override;
 };
 

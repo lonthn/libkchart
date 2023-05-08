@@ -19,7 +19,7 @@ KChartWnd::KChartWnd()
   , beginIdx_(0)
   , endIdx_(0)
   , size_({0})
-  , sWidth_(9)
+  , sWidth_(5)
   , lvVisible_(true)
   , rvVisible_(true)
   , vAxisWidth_(80)
@@ -122,6 +122,17 @@ void KChartWnd::Show(bool show)
     ::ShowWindow(handle_, show ? SW_SHOW : SW_HIDE);
 }
 
+void KChartWnd::Invalidate()
+{
+    // TODO: 发送重绘消息
+    RECT rect;
+    rect.left = 0;
+    rect.top = 0;
+    rect.right = (int) Width();
+    rect.bottom = (int) Height();
+    InvalidateRect(handle_, &rect, TRUE);
+}
+
 Rect KChartWnd::GetAreaBounds()
 {
     Rect bounds = {
@@ -155,6 +166,18 @@ GraphArea *KChartWnd::CreateArea(float weight)
 
     area->UpdateScales();
     return area;
+}
+
+void KChartWnd::Zoom(int factor)
+{
+    sWidth_ += factor * 2;
+    if (sWidth_ < 0)
+        sWidth_ = 1;
+
+    FitNewWidth();
+
+    for (auto area : areas_)
+        area->UpdateScales();
 }
 
 LRESULT KChartWnd::OnMessage(
@@ -208,13 +231,7 @@ LRESULT KChartWnd::OnSize(WPARAM wParam, LPARAM lParam)
     for (auto area : areas_)
         area->UpdateScales();
 
-    // TODO: 发送重绘消息
-    RECT rect;
-    rect.left = 0;
-    rect.top = 0;
-    rect.right = (int) width;
-    rect.bottom = (int) height;
-    InvalidateRect(handle_, &rect, TRUE);
+    Invalidate();
 
     return 0;
 }
@@ -296,7 +313,7 @@ void KChartWnd::FitNewWidth()
     {
         if (newCount > data_.RowCount())
         {
-            endIdx_ += newCount;
+            endIdx_ = newCount;
             beginIdx_ = 0;
         }
         else

@@ -76,9 +76,6 @@ bool GraphArea::AddGraphics(Graphics *graph)
 
 void GraphArea::MinMaxData()
 {
-    if (validCache_)
-        return;
-
     cacheMin_ = INT16_MAX;
     cacheMax_ = INT16_MIN;
 
@@ -88,12 +85,11 @@ void GraphArea::MinMaxData()
     if (end - begin_ == 0)
         return;
 
-    for (const auto &item: graphics_)
+    for (const auto &item : graphics_)
     {
-        int colNum = (int) item->cids.size();
-        for (int i = 0; i < colNum; i++)
+        for (auto *cid : item->cids)
         {
-            DataRows& col = data[item->cids[i]->index];
+            DataRows& col = data[cid];
             for (int j = begin_; j < end; j++)
             {
                 if (col[j] < cacheMin_)
@@ -122,55 +118,46 @@ void GraphArea::UpdateScales()
         return;
 
     scales_.clear();
-
     if (graphics_.empty())
         return;
 
-    // 计算刻度
-    DataSet& data = panel_->DataRef();
-
+    int distance = 40;
     Scalar contentHeight = GetContentHeight();
 
-    // int digit = 0;
-    int distance = 40;
-
+    // 刻度数量，至少有一个
     Scalar scaleNum = contentHeight / distance;
     if (scaleNum <= 0)
         scaleNum = 1;
 
-    float differ_gap = float(cacheMax_ - cacheMin_) / float(scaleNum);
-
-    float exponent = log10(differ_gap) - 1;
-    int exponenti = (int) exponent;
+    // 刻度之间的间隔
+    float step = float(cacheMax_ - cacheMin_) / float(scaleNum);
+    float exponent = log10(step) - 1;
+    int expi = (int) exponent;
     if (exponent < 0 && abs(exponent) > 1e-8)
-        exponenti--;
+        expi--;
 
-    int tmp_step = (int) (differ_gap / pow(10, exponenti));
+    double s = pow(10, expi);
 
-    const int stdlen = 5;
-    const int standard[stdlen] = {10, 20, 25, 50, 100};
-    int fixed = 10;
-    for (int i = stdlen - 1; i >= 1; i--)
+    int tmp_step = int(step / s);
+    int mod = tmp_step % 10;
+    if (mod > 0)
     {
-        if (tmp_step > (standard[i] + standard[i - 1]) / 2)
-        {
-            fixed = standard[i];
-            break;
-        }
+        if (mod > 5)
+            tmp_step += 10 - mod;
+        else
+            tmp_step -= mod;
     }
 
-    float step = float(fixed * pow(10, exponenti));
+    step = float(tmp_step * s);
 
-    if (tmp_step > 0)
+    if (step > 0)
     {
         float start = 0;
         if (cacheMin_ >= 0) {
-            //start = (min / step) * tmp_step + tmp_step;
             while (start < cacheMin_) {
                 start += step;
             }
         } else {
-//            start = (min / tmp_step) * tmp_step - tmp_step;
             while (start > cacheMin_) {
                 start -= step;
             }
@@ -197,7 +184,7 @@ void GraphArea::OnFitIdx(int begin, int end)
 
 void GraphArea::OnPaint(GraphContext *ctx)
 {
-    // TODO: 标题
+    // TODO: 标签
 
     Size size = {
         (bounds_.right - bounds_.left),
@@ -211,11 +198,16 @@ void GraphArea::OnPaint(GraphContext *ctx)
 
     int wCount = end_ - begin_;
     DataType hCount = cacheMax_ - cacheMin_;
-    float wratio = float(size.width) / float(wCount);
-    float hratio = float(size.height) / float(hCount);
 
-    DrawData data(raw, begin_, min(wCount, raw.RowCount()),
-                  size, wratio, hratio, cacheMin_);
+    DrawData data(raw, begin_, min(wCount, raw.RowCount()));
+    data.size = size;
+    data.bias = cacheMin_;
+    data.wRatio = float(size.width) / float(wCount);
+    data.hRatio = float(size.height) / float(hCount);
+    data.sWidth  = Scalar(data.wRatio);
+    if (data.sWidth < 3)
+        data.sWidth = 1;
+    data.sMargin = data.sWidth / 4;
 
     // 绘制刻度线
     ctx->SetColor(scaleLineColor_);
@@ -228,7 +220,7 @@ void GraphArea::OnPaint(GraphContext *ctx)
     // 绘制图形
     OnPaintGraph(ctx, data);
 
-    // 绘制刻度
+    // 绘制刻度轴
     ctx->SetTranslate({bounds_.left-lAxis_->GetWidth(), bounds_.top});
     lAxis_->OnPaint(ctx, data, size.height);
 

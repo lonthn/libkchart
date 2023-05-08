@@ -86,4 +86,4 @@ static WStr StringFormat(const wchar_t* format, ...) {
 
 }
 
-#endif //LIBOW_STRING_H
+#endif //LIBKCHART_WSTR_H

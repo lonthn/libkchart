@@ -47,10 +47,13 @@ public:
     virtual void SetTitle(const Str& str);
 
     virtual void Show(bool show);
+    virtual void Invalidate();
 
     virtual Rect GetAreaBounds();
 
-    GraphArea *CreateArea(float percent);
+    virtual GraphArea *CreateArea(float percent);
+
+    virtual void Zoom(int factor);
 
 public:
     static Str ClassName() {

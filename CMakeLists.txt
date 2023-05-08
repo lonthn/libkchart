@@ -28,4 +28,5 @@ link_libraries(gdiplus)
 link_libraries(${PROJECT_NAME})
 
 add_executable(example
-		example/DayKLine.cpp)
+		example/DayKLine.cpp
+		)

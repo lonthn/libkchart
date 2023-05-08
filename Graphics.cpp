@@ -7,36 +7,29 @@
 
 namespace kchart {
 
-void KLineGraph::Paint(GraphContext *gctx, DrawData& data)
+void KLineGraph::Paint(GraphContext *gctx, const DrawData &data)
 {
-    Size areaSize = data.GetSize();
-
-    float  wratio = data.GetWRatio();
-    Scalar width = Scalar(wratio);
-    if (width < 3)
-        width = 1;
-
-    // 宽度的1/4作为外边距
-    Scalar margin = width / 4;
-    // 单根K线实际宽度
+    Size areaSize = data.size;
+    Scalar width = data.sWidth;
+    Scalar margin = data.sMargin;
     Scalar reactWidth = width - margin * 2;
-
-    Scalar x = areaSize.width;
+    if (width == reactWidth)
+        width = 1;
 
     int minIdx = data.Count() - 1;
     int maxIdx = data.Count() - 1;
-    DataType min = data.Get(minIdx, cids[Low]->index);
-    DataType max = data.Get(maxIdx, cids[High]->index);
+    DataType min = data.Get(cids[Low], minIdx);
+    DataType max = data.Get(cids[High], maxIdx);
 
     // 反向绘制使得窗体缩放时不会导致图形抖动
     for (int i = data.Count() - 1; i >= 0; i--)
     {
-        x -= (Scalar(wratio) - margin);
+        Scalar x = data.ToPX(i);
 
-        DataType open  = data.Get(i, cids[Open]->index);
-        DataType high  = data.Get(i, cids[High]->index);
-        DataType low   = data.Get(i, cids[Low]->index);
-        DataType close = data.Get(i, cids[Close]->index);
+        DataType open  = data.Get(cids[Open], i);
+        DataType high  = data.Get(cids[High], i);
+        DataType low   = data.Get(cids[Low], i);
+        DataType close = data.Get(cids[Close], i);
 
         if (min > low)
         {
@@ -57,14 +50,13 @@ void KLineGraph::Paint(GraphContext *gctx, DrawData& data)
             gctx->SetColor(NormalColor);
 
         // 影线
-        Scalar center = x + (reactWidth/2);
         if (width == 1 || open == close)
         {
             if (high != low)
             {
                 Scalar top = data.ToPY(high);
                 Scalar bottom = data.ToPY(low);
-                gctx->DrawLine(center, top, center, bottom);
+                gctx->DrawLine(x, top, x, bottom);
             }
         }
         else
@@ -76,49 +68,46 @@ void KLineGraph::Paint(GraphContext *gctx, DrawData& data)
             {
                 Scalar top = data.ToPY(high);
                 Scalar bottom = data.ToPY(upStart);
-                gctx->DrawLine(center, top, center, bottom);
+                gctx->DrawLine(x, top, x, bottom);
             }
             if (downStart > low)
             {
                 Scalar top = data.ToPY(downStart);
                 Scalar bottom = data.ToPY(low);
-                gctx->DrawLine(center, top, center, bottom);
+                gctx->DrawLine(x, top, x, bottom);
             }
         }
 
         // 绘制箱体
         if (width > 1)
         {
+            Scalar left = x - (reactWidth/2);
             if (open < close) // 阳线
             {
                 gctx->FillRect(
-                    x, data.ToPY(close),
-                    x + reactWidth, data.ToPY(open)
+                    left, data.ToPY(close),
+                    left + reactWidth, data.ToPY(open)
                 );
             }
             else if (open > close) // 阴线
             {
                 gctx->FillRect(
-                    x, data.ToPY(open),
-                    x + reactWidth, data.ToPY(close)
+                    left, data.ToPY(open),
+                    left + reactWidth, data.ToPY(close)
                 );
             }
             else // 平盘
             {
                 Scalar y = data.ToPY(close);
-                gctx->DrawLine(x, y, x + reactWidth, y);
+                gctx->DrawLine(left, y, left + reactWidth, y);
             }
         }
-
-        x -= margin;
     }
-
 
     // 最高与最低点标注
     gctx->SetColor(TextColor);
 
-    auto fn = [&data, gctx, areaSize, wratio, reactWidth, this]
-    (DataType num, int i)
+    auto fn = [=](DataType num, int i)
     {
         Scalar dis = 10;
         WStr str = WStr::ToString(num, Digit);
@@ -135,8 +124,7 @@ void KLineGraph::Paint(GraphContext *gctx, DrawData& data)
             ty = 0;
         }
 
-        Scalar x = areaSize.width - (data.Count() - i) * Scalar(wratio);
-        x += reactWidth / 2; // 居中
+        Scalar x = data.ToPX(i);
         if (i < data.Count()/2) {
             gctx->DrawLine(x, ny, x + dis, ty + halfHeight);
             x += dis;
@@ -153,34 +141,23 @@ void KLineGraph::Paint(GraphContext *gctx, DrawData& data)
 }
 
 
-void VolumeGraph::Paint(
-        GraphContext *gctx,
-        DrawData& data
-)
+void VolumeGraph::Paint(GraphContext *gctx, const DrawData &data)
 {
-    Size areaSize = data.GetSize();
-
-    float  wratio = data.GetWRatio();
-    Scalar width = Scalar(wratio);
-    if (width < 3)
+    Scalar width = data.sWidth;
+    Scalar reactWidth = width - data.sMargin*2;
+    if (width == reactWidth)
         width = 1;
 
-    // 宽度的1/4作为外边距
-    Scalar margin = width / 4;
-    // 单根柱体实际宽度
-    Scalar reactWidth = width - margin*2;
-
-    Scalar x = areaSize.width;
+    Scalar x;
 
     // 反向绘制使得窗体缩放时不会抖动
     for (int i = data.Count() - 1; i >= 0; i--)
     {
+        x = data.ToPX(i);
 
-        x -= (Scalar(wratio) - margin);
-
-        DataType open  = data.Get(i, cids[0]->index);
-        DataType close = data.Get(i, cids[1]->index);
-        DataType vol  = data.Get(i,  cids[2]->index);
+        DataType open  = data.Get(cids[0], i);
+        DataType close = data.Get(cids[1], i);
+        DataType vol   = data.Get(cids[2], i);
 
         if (close > open)
             gctx->SetColor(UpColor);
@@ -191,49 +168,45 @@ void VolumeGraph::Paint(
 
         Scalar top = data.ToPY(vol);
         Scalar bottom = data.ToPY(0);
-        Scalar center = x + (reactWidth/2);
+        Scalar left = x - (reactWidth/2);
         if (width == 1)
         {
-            gctx->DrawLine(center, top, center, bottom);
+            gctx->DrawLine(x, top, x, bottom);
         }
         else
         {
-            if (open < close) // 红柱
-            {
-                gctx->FillRect(
-                        x, top,
-                        x + reactWidth, bottom
-                );
-            }
-            else if (open > close) // 绿柱
-            {
-                gctx->FillRect(
-                        x, top,
-                        x + reactWidth, bottom
-                );
-            }
-            else
-            {
-            }
+            gctx->FillRect(
+                left, top,
+                left + reactWidth, bottom
+            );
+//            if (open < close) // 红柱
+//            {
+//                gctx->FillRect(
+//                    left, top,
+//                    left + reactWidth, bottom
+//                );
+//            }
+//            else if (open > close) // 绿柱
+//            {
+//                gctx->FillRect(
+//                    left, top,
+//                    left + reactWidth, bottom
+//                );
+//            }
+//            else
+//            {
+//            }
         }
-
-        x -= margin;
     }
 }
 
 
-void PolyLineGraph::Paint(GraphContext *gctx, DrawData& data)
+void PolyLineGraph::Paint(GraphContext *gctx, const DrawData &data)
 {
-    Size areaSize = data.GetSize();
-    float  wratio = data.GetWRatio();
-    //Scalar width = Scalar(wratio);
-
-    Scalar x = areaSize.width - Scalar(wratio/2);
-
     int i = 0;
     for (; i < data.Count(); i++)
     {
-        DataType val = data.Get(i, cids[0]->index);
+        DataType val = data.Get(cids[0], i);
         if (!isnan(val))
             break;
     }
@@ -244,50 +217,29 @@ void PolyLineGraph::Paint(GraphContext *gctx, DrawData& data)
 
     for (int j = data.Count() - 1; j >= i; j--)
     {
-        DataType val = data.Get(j, cids[0]->index);
+        DataType val = data.Get(cids[0], j);
+        Scalar x = data.ToPX(j);
         Scalar y = data.ToPY(val);
         gctx->AddPolyLine({x, y});
-
-        x -= Scalar(wratio);
     }
 
     gctx->EndPolyLine();
 }
 
-void HistogramGraph::Paint(
-    GraphContext *gctx,
-    DrawData& data
-)
+void HistogramGraph::Paint(GraphContext *gctx, const DrawData &data)
 {
-    Size areaSize = data.GetSize();
-
-    float  wratio = data.GetWRatio();
-    Scalar width = 1;
-
-    // 宽度的1/4作为外边距
-    Scalar margin = Scalar(wratio) / 4;
-    // 单根柱体实际宽度
-    Scalar reactWidth = Scalar(wratio) - margin*2;
-
-    Scalar x = areaSize.width;
-
-    gctx->SetColor(NormalColor);
-
     bool validca = !isnan(centralAxis);
     DataType baseLine = validca ? centralAxis : 0;
+
+    gctx->SetColor(NormalColor);
 
     // 反向绘制使得窗体缩放时不会抖动
     for (int i = data.Count() - 1; i >= 0; i--)
     {
-        x -= (Scalar(wratio) - margin);
-
-        DataType val  = data.Get(i, cids[0]->index);
+        DataType val  = data.Get(cids[0], i);
 
         if (baseLine == val)
-        {
-            x -= margin;
             continue;
-        }
 
         if (validca)
         {
@@ -297,13 +249,11 @@ void HistogramGraph::Paint(
                 gctx->SetColor(DownColor);
         }
 
+        Scalar x = data.ToPX(i);
         Scalar top = data.ToPY(val);
         Scalar bottom = data.ToPY(baseLine);
-        Scalar center = x + (reactWidth/2);
-        //if (width == 1)
-        {
-            gctx->DrawLine(center, top, center, bottom);
-        }
+        gctx->DrawLine(x, top, x, bottom);
+
 //        else
 //        {
 //            if (open < close) // 红柱
@@ -320,8 +270,6 @@ void HistogramGraph::Paint(
 //                x + reactWidth, bottom
 //                );
 //            }
-
-        x -= margin;
     }
 
 }
