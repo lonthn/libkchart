@@ -155,7 +155,7 @@ void MACD(DataSet& data, GraphArea *area)
     {
         // EMA(n1) = 前一日EMA(n1)×(n1-1)/(n1+1) + 今日收盘价×2/(n1+1)
         preEMA1 = preEMA1 * sc11 + data[close][i] * sc12;
-        // EMA(e2) = 前一日EMA(e2)×(n2-1)/(n2+1) + 今日收盘价×2/(n2+1)
+        // EMA(n2) = 前一日EMA(n2)×(n2-1)/(n2+1) + 今日收盘价×2/(n2+1)
         preEMA2 = preEMA2 * sc21 + data[close][i] * sc22;
         // DIF = 今日EMA(n1) － 今日EMA(n2)
         DataType difv = preEMA1 - preEMA2;
@@ -169,7 +169,10 @@ void MACD(DataSet& data, GraphArea *area)
 
     area->SetCentralAxis(0);
 
-    area->AddGraphics(new HistogramGraph(macd));
+    HistogramGraph *hg = new HistogramGraph(macd);
+    hg->FixedWidth = 1;
+
+    area->AddGraphics(hg);
     area->AddGraphics(new PolyLineGraph(dif));
     area->AddGraphics(new PolyLineGraph(dea));
 }

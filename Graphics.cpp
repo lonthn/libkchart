@@ -141,66 +141,6 @@ void KLineGraph::Paint(GraphContext *gctx, const DrawData &data)
 }
 
 
-void VolumeGraph::Paint(GraphContext *gctx, const DrawData &data)
-{
-    Scalar width = data.sWidth;
-    Scalar reactWidth = width - data.sMargin*2;
-    if (width == reactWidth)
-        width = 1;
-
-    Scalar x;
-
-    // 反向绘制使得窗体缩放时不会抖动
-    for (int i = data.Count() - 1; i >= 0; i--)
-    {
-        x = data.ToPX(i);
-
-        DataType open  = data.Get(cids[0], i);
-        DataType close = data.Get(cids[1], i);
-        DataType vol   = data.Get(cids[2], i);
-
-        if (close > open)
-            gctx->SetColor(UpColor);
-        else if (close < open)
-            gctx->SetColor(DownColor);
-        else
-            gctx->SetColor(NormalColor);
-
-        Scalar top = data.ToPY(vol);
-        Scalar bottom = data.ToPY(0);
-        Scalar left = x - (reactWidth/2);
-        if (width == 1)
-        {
-            gctx->DrawLine(x, top, x, bottom);
-        }
-        else
-        {
-            gctx->FillRect(
-                left, top,
-                left + reactWidth, bottom
-            );
-//            if (open < close) // 红柱
-//            {
-//                gctx->FillRect(
-//                    left, top,
-//                    left + reactWidth, bottom
-//                );
-//            }
-//            else if (open > close) // 绿柱
-//            {
-//                gctx->FillRect(
-//                    left, top,
-//                    left + reactWidth, bottom
-//                );
-//            }
-//            else
-//            {
-//            }
-        }
-    }
-}
-
-
 void PolyLineGraph::Paint(GraphContext *gctx, const DrawData &data)
 {
     int i = 0;
@@ -230,8 +170,13 @@ void HistogramGraph::Paint(GraphContext *gctx, const DrawData &data)
 {
     bool validca = !isnan(centralAxis);
     DataType baseLine = validca ? centralAxis : 0;
+    Scalar   width    = FixedWidth != -1
+                ? FixedWidth : data.sWidth - data.sMargin * 2;
 
-    gctx->SetColor(NormalColor);
+    if (width == data.sWidth)
+        width = 1;
+
+    // gctx->SetColor(NormalColor);
 
     // 反向绘制使得窗体缩放时不会抖动
     for (int i = data.Count() - 1; i >= 0; i--)
@@ -242,36 +187,26 @@ void HistogramGraph::Paint(GraphContext *gctx, const DrawData &data)
             continue;
 
         if (validca)
-        {
-            if (val > centralAxis)
-                gctx->SetColor(UpColor);
-            else if (val < centralAxis)
-                gctx->SetColor(DownColor);
-        }
+            gctx->SetColor(GetColorWithCA(data, i));
+        else
+            gctx->SetColor(GetColor(data, i));
 
         Scalar x = data.ToPX(i);
         Scalar top = data.ToPY(val);
         Scalar bottom = data.ToPY(baseLine);
-        gctx->DrawLine(x, top, x, bottom);
-
-//        else
-//        {
-//            if (open < close) // 红柱
-//            {
-//                gctx->DrawRect(
-//                x, top,
-//                x + reactWidth, bottom
-//                );
-//            }
-//            else if (open > close) // 绿柱
-//            {
-//                gctx->FillRect(
-//                x, top,
-//                x + reactWidth, bottom
-//                );
-//            }
+        if (width == 1)
+        {
+            gctx->DrawLine(x, top, x, bottom);
+        }
+        else
+        {
+            Scalar left = x - width/2;
+            gctx->FillRect(
+                left, top,
+                left + width, bottom
+            );
+        }
     }
-
 }
 
 }

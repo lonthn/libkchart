@@ -78,15 +78,15 @@ public:
     inline int Count() const { return count; }
 
     inline DataType Get(int col, int row) const {
-        return data[col][off + row];
+        return data.Get(col, off + row);
     }
 
     inline DataType Get(ColumnKey col, int row) const {
-        return data[col][off + row];
+        return data.Get(col, off + row);
     }
 
     inline DataType Get(const Index2& idx) const {
-        return data[idx.col][off + idx.row];
+        return data.Get(idx.col, off + idx.row);
     }
 
     inline Scalar ToPX(int idx) const {
