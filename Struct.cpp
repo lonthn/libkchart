@@ -26,6 +26,15 @@ ColumnKey DataSet::AddCol(const Str& name)
     return &colKeys[name];
 }
 
+int DataSet::AddRow()
+{
+    for (auto & col : cols) {
+        col.resize(col.size() + 1);
+    }
+
+    return rowCount++;
+}
+
 void DataSet::AddRow(int n)
 {
     for (auto & col : cols) {

@@ -32,6 +32,7 @@ public:
     DataSet();
 
     ColumnKey AddCol(const Str& name);
+    int       AddRow();
     void      AddRow(int n);
 
     ColumnKey FindCol(const Str& name);

@@ -32,6 +32,13 @@ public:
         return data_;
     }
 
+    void SetCrosshairColor(Color color) {
+        crosshairColor_ = color;
+    }
+    Color GetCrosshairColor() const {
+        return crosshairColor_;
+    }
+
     virtual bool CreateWin(HWND hParent = nullptr);
 
     virtual Scalar Width() const;
@@ -60,7 +67,9 @@ public:
         return "WINEX_CLS_KChart";
     }
 
-public:
+protected:
+    virtual void OnSetCrosshairPoint(Point point);
+
     LRESULT CALLBACK OnMessage(
         UINT msg, WPARAM wParam, LPARAM lParam
     );
@@ -68,6 +77,8 @@ public:
     virtual LRESULT OnCreate (WPARAM wParam, LPARAM lParam);
     virtual LRESULT OnSize   (WPARAM wParam, LPARAM lParam);
     virtual LRESULT OnPaint  (WPARAM wParam, LPARAM lParam);
+    virtual LRESULT OnLBtnDown(WPARAM wParam, LPARAM lParam);
+    virtual LRESULT OnMouseMove(WPARAM wParam, LPARAM lParam);
 
 private:
     void Layout();
@@ -85,6 +96,11 @@ private:
     std::vector<VerticalAxis*> lvAxis_;
     std::vector<VerticalAxis*> rvAxis_;
     std::vector<GraphArea*> areas_;
+
+    bool  crosshairEnable_;
+    bool  crosshairVisible_;
+    Color crosshairColor_;
+    Point crosshairPoint_;
 
     int beginIdx_;
     int endIdx_;

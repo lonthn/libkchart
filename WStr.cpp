@@ -189,9 +189,9 @@ WStr WStr::ToLower(const WStr &str) {
 }
 
 WStr WStr::FromUTF8(const char* utf8) {
-    //std::wstring_convert<std::codecvt_utf8<wchar_t>> cnv;
-    //return cnv.from_bytes(utf8);
-    return L"";
+    std::wstring_convert<std::codecvt_utf8<wchar_t>> cnv;
+    return cnv.from_bytes(utf8);
+    //return L"";
 }
 
 WStr WStr::FromUTF8(const std::string& utf8) {

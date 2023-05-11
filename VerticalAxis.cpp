@@ -22,6 +22,7 @@ void VerticalAxis::OnPaint(GraphContext *ctx, DrawData& data,
                            Scalar height)
 {
     ctx->SetColor(scaleColor_);
+    ctx->SetFont(FontId_WRYH, 10);
 
     Scalar pad = 5;
 

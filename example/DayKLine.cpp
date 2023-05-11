@@ -47,6 +47,7 @@ int WINAPI WinMain(
 
     /// 添加图形
     mainArea->AddGraphics(new KLineGraph(data));
+    // 添加MA指标线
     MA(data, mainArea, 5);
     MA(data, mainArea, 10);
     MA(data, mainArea, 20);
@@ -54,7 +55,6 @@ int WINAPI WinMain(
     MA(data, mainArea, 60);
 
     volumeArea->AddGraphics(new VolumeGraph(data));
-
     MACD(data, indiArea);
 
 
@@ -69,6 +69,8 @@ void LoadKLineData(const char *file, DataSet& data)
 //  SH000001,202201040000,768.8720,803.7480,767.4470,803.7480,302111788,2928518397
 //  SH000001,202201050000,768.8720,803.7480,767.4470,803.7480,302111788,2928518397
 //  ...
+
+    // 注意! 文件中的数据并不是真实市场行情数据, 不具备任何参考意义.
     std::ifstream ifs(file, std::ios::binary);
     assert(ifs.is_open());
 
@@ -81,7 +83,6 @@ void LoadKLineData(const char *file, DataSet& data)
     const int bufSize = 1024;
     char buf[bufSize];
 
-    int row = 0;
     while (!ifs.eof())
     {
         ifs.getline(buf, bufSize - 1, '\n');
@@ -94,15 +95,12 @@ void LoadKLineData(const char *file, DataSet& data)
         if (fields[0] == "symbol")
             continue;
 
-        data.AddRow(1);
-
-        data[open] [row] = fields[2].toFloat();
-        data[high] [row] = fields[3].toFloat();
-        data[low]  [row] = fields[4].toFloat();
-        data[close][row] = fields[5].toFloat();
-        data[vol]  [row] = fields[6].toFloat();
-
-        row++;
+        int idx = data.AddRow();
+        data[open] [idx] = fields[2].toFloat();
+        data[high] [idx] = fields[3].toFloat();
+        data[low]  [idx] = fields[4].toFloat();
+        data[close][idx] = fields[5].toFloat();
+        data[vol]  [idx] = fields[6].toFloat();
     }
 }
 

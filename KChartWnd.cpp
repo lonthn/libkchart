@@ -20,6 +20,10 @@ KChartWnd::KChartWnd()
   , endIdx_(0)
   , size_({0})
   , sWidth_(5)
+  , crosshairEnable_(true)
+  , crosshairVisible_(false)
+  , crosshairColor_(0xFFFFFFFF)
+  , crosshairPoint_({-1, -1})
   , lvVisible_(true)
   , rvVisible_(true)
   , vAxisWidth_(80)
@@ -58,7 +62,7 @@ bool KChartWnd::CreateWin(HWND hParent)
         cls.cbWndExtra = 0;
         cls.hIcon = NULL;
         cls.hCursor = NULL;
-        cls.hbrBackground = NULL; //CreateSolidBrush(0xFFFFFF);
+        cls.hbrBackground = NULL; // CreateSolidBrush(0xFFFFFF);
 
         assert(RegisterClassA(&cls));
 
@@ -180,6 +184,30 @@ void KChartWnd::Zoom(int factor)
         area->UpdateScales();
 }
 
+void KChartWnd::OnSetCrosshairPoint(Point point)
+{
+    crosshairPoint_ = point;
+
+    for (auto &item: areas_)
+    {
+        Rect bounds = item->GetBounds();
+        bounds.top += item->GetLabelHeight();
+
+        Scalar width = bounds.right - bounds.left;
+
+        Scalar x = crosshairPoint_.x - bounds.left;
+        Scalar y = crosshairPoint_.y - bounds.top;
+        x = max(-1, x);
+        y = max(-1, y);
+        if (x > width)
+            x = -1;
+        if (y > item->GetContentHeight())
+            y = -1;
+
+        item->OnMoveCrosshair({x, y});
+    }
+}
+
 LRESULT KChartWnd::OnMessage(
     UINT msg, WPARAM wParam, LPARAM lParam
 )
@@ -192,6 +220,10 @@ LRESULT KChartWnd::OnMessage(
             nRes = OnSize(wParam, lParam);   break;
         case WM_PAINT:
             nRes = OnPaint(wParam, lParam);  break;
+        case WM_LBUTTONDOWN:
+            nRes = OnLBtnDown(wParam, lParam); break;
+        case WM_MOUSEMOVE:
+            nRes = OnMouseMove(wParam, lParam); break;
 
         default:
             return DefWindowProcA(handle_, msg, wParam, lParam);
@@ -282,6 +314,38 @@ LRESULT KChartWnd::OnPaint(WPARAM wParam, LPARAM lParam)
     EndPaint(handle_, &paint);
 
     return 0;
+}
+
+LRESULT KChartWnd::OnLBtnDown(WPARAM wParam, LPARAM lParam)
+{
+    if (!crosshairEnable_)
+        return 1;
+
+    crosshairVisible_ = !crosshairVisible_;
+    if (crosshairVisible_)
+    {
+        OnSetCrosshairPoint({LOWORD(lParam), HIWORD(lParam)});
+    }
+    else
+    {
+        OnSetCrosshairPoint({-1, -1});
+    }
+
+
+    Invalidate();
+    return 0;
+}
+
+LRESULT KChartWnd::OnMouseMove(WPARAM wParam, LPARAM lParam)
+{
+    if (crosshairVisible_)
+    {
+        OnSetCrosshairPoint({LOWORD(lParam), HIWORD(lParam)});
+        Invalidate();
+        return 0;
+    }
+
+    return 1;
 }
 
 void KChartWnd::Layout()
