@@ -15,7 +15,9 @@ class Graphics
 {
 public:
     explicit Graphics(int colNum)
-    : centralAxis(NAN) {
+    : centralAxis(NAN)
+    , Digit(2)
+    , NormalColor(0xFFFFFFFF) {
         cids.resize(colNum, 0);
     }
 
@@ -23,6 +25,16 @@ public:
     /// 选取一个颜色进行设置, 当然我们也可以自定义颜色.
     virtual bool SetColor(Color color) {
         return false;
+    }
+
+    /// @brief 获取图形颜色.
+    virtual Color GetColor(const DrawData& data, int i) {
+        return NormalColor;
+    }
+
+    /// @brief 获取图形颜色, 带中心轴的情况下.
+    virtual Color GetColorWithCA(const DrawData& data, int i) {
+        return NormalColor;
     }
 
     /// 重写 Paint 以绘制需要的图形
@@ -33,6 +45,8 @@ public:
 
     std::vector<ColumnKey> cids;
     DataType centralAxis;
+    int Digit;
+    Color NormalColor;
 };
 
 /// K线图，需要提供开高低收4列数据
@@ -49,19 +63,14 @@ class KLineGraph : public Graphics
 
 public:
     Color UpColor;
-    Color NormalColor;
     Color DownColor;
     Color TextColor;
 
-    int Digit;
-
     explicit KLineGraph(DataSet& data)
-      : Graphics(4)
-      , Digit(2)
+    : Graphics(4)
     {
         UpColor     = 0xFFFF4A4A;
         DownColor   = 0xFF54FCFC;
-        NormalColor = 0xFFFFFFFF;
         TextColor   = 0xFFFFFFFF;
 
         cids[Open]  = data.FindCol("OPEN");
@@ -79,18 +88,15 @@ public:
 
 class PolyLineGraph : public Graphics {
 public:
-    Color LineColor;
-
     explicit PolyLineGraph(ColumnKey col)
     : Graphics(1)
-    , LineColor(0xFFFFFFFF)
     {
         cids[0] = col;
     }
 
     bool SetColor(Color color) override
     {
-        LineColor = color;
+        NormalColor = color;
         return true;
     }
 
@@ -103,7 +109,6 @@ public:
 /// 柱状图
 class HistogramGraph : public Graphics {
 public:
-    Color NormalColor;
     Color UpColor;
     Color DownColor;
     Scalar FixedWidth;
@@ -113,20 +118,12 @@ public:
     {
         UpColor     = 0xFFFF4A4A;
         DownColor   = 0xFF54FCFC;
-        NormalColor = 0xFFFFFFFF;
         FixedWidth    = -1;
 
         cids[0] = key;
     }
 
-    /// @brief 获取柱状图颜色.
-    virtual Color GetColor(const DrawData& data, int i)
-    {
-        return NormalColor;
-    }
-
-    /// @brief 获取柱状图颜色, 带中心轴的情况下.
-    virtual Color GetColorWithCA(const DrawData& data, int i)
+    Color GetColorWithCA(const DrawData& data, int i) override
     {
         DataType val = data.Get(cids[0], i);
 
@@ -151,15 +148,14 @@ public:
     explicit VolumeGraph(DataSet& data)
     : HistogramGraph(data.FindCol("VOLUME"))
     {
-        cids.resize(3);
-        cids[1] = data.FindCol("OPEN");
-        cids[2] = data.FindCol("CLOSE");
+        openKey_ = data.FindCol("OPEN");
+        closeKey_ = data.FindCol("CLOSE");
     }
 
     Color GetColor(const DrawData& data, int i) override
     {
-        DataType open = data.Get(cids[1], i);
-        DataType close = data.Get(cids[2], i);
+        DataType open = data.Get(openKey_, i);
+        DataType close = data.Get(closeKey_, i);
 
         if (open > close)
             return UpColor;
@@ -168,6 +164,10 @@ public:
 
         return NormalColor;
     }
+
+private:
+    ColumnKey openKey_;
+    ColumnKey closeKey_;
 };
 
 }

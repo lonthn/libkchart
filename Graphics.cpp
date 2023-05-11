@@ -104,9 +104,9 @@ void KLineGraph::Paint(GraphContext *gctx, const DrawData &data)
         }
     }
 
-    // 最高与最低点标注
     gctx->SetColor(TextColor);
 
+    // 最高与最低点标注
     auto fn = [=](DataType num, int i)
     {
         Scalar dis = 10;
@@ -151,7 +151,7 @@ void PolyLineGraph::Paint(GraphContext *gctx, const DrawData &data)
             break;
     }
 
-    gctx->SetColor(LineColor);
+    gctx->SetColor(GetColor(data, 0));
 
     gctx->BeginPolyLine(data.Count() - i);
 

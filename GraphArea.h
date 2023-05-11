@@ -46,10 +46,6 @@ protected:
         return weight_;
     }
 
-    Scalar GetContentHeight() const {
-        return bounds_.bottom - bounds_.top;
-    }
-
     void SetBounds(const Rect& bounds) {
         bounds_ = bounds;
     }
@@ -58,17 +54,26 @@ protected:
         return bounds_;
     }
 
+    Scalar GetLabelHeight() const {
+        return labelVisible_ ? labelHeight_ : 0;
+    }
+
     const DataRows& GetScales() {
         return scales_;
     }
+
+    Scalar GetContentHeight() const;
 
     virtual void MinMaxData();
     virtual void UpdateScales();
 
     virtual void OnFitIdx(int begin, int end);
+    virtual void OnMoveCrosshair(Point point);
 
     virtual void OnPaint(GraphContext *ctx);
+    virtual void OnPaintLabel(GraphContext *ctx, DrawData& data);
     virtual void OnPaintGraph(GraphContext *ctx, DrawData& data);
+    virtual void OnPaintCrosshair(GraphContext *ctx, DrawData& data);
 
 protected:
     KChartWnd *panel_;
@@ -76,6 +81,10 @@ protected:
 
     Rect bounds_;
     Rect graphArea_;
+    Point crosshairPoint_;
+    Scalar labelHeight_;
+    bool   labelVisible_;
+    Color  labelBackColor_;
 
     int begin_;
     int end_;

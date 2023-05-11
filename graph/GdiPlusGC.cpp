@@ -40,7 +40,7 @@ GdiPlusGC::GdiPlusGC()
     gdiPen_ = new Gdiplus::Pen(Gdiplus::Color::White);
     gdiBrush_ = new Gdiplus::SolidBrush(Gdiplus::Color::White);
 
-    SetFont(FontId_WRYH, 10);
+    SetFont(FontId_WRYH, 8);
 }
 
 GdiPlusGC::~GdiPlusGC()

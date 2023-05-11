@@ -17,17 +17,21 @@ GraphArea::GraphArea(KChartWnd *panel,
                      VerticalAxis *ra)
 : panel_(panel)
 , validCache_(false)
+, labelVisible_(true)
+, labelHeight_(20)
+, labelBackColor_(0xFF2C2F36) //0xFF1C1F26
+, crosshairPoint_({-1, -1})
 , lAxis_(la)
 , rAxis_(ra)
 , scaleLineColor_(0xFF303030)
 , colorIdx_(0)
 , centralAxis_(NAN)
 {
-   colorList_.emplace_back(0xFF3cb44b);
-   colorList_.emplace_back(0xFFffe119);
-   colorList_.emplace_back(0xFF4363d8);
-   colorList_.emplace_back(0xFFf58231);
-   colorList_.emplace_back(0xFF911eb4);
+   colorList_.emplace_back(0xFF4cc45b);
+   colorList_.emplace_back(0xFFfff129);
+   colorList_.emplace_back(0xFF5373e8);
+   colorList_.emplace_back(0xFFf59241);
+   colorList_.emplace_back(0xFFa12ec4);
    colorList_.emplace_back(0xFF42d4f4);
    colorList_.emplace_back(0xFFf032e6);
    colorList_.emplace_back(0xFFbfef45);
@@ -72,6 +76,15 @@ bool GraphArea::AddGraphics(Graphics *graph)
     graph->centralAxis = centralAxis_;
     graphics_.emplace_back(graph);
     return true;
+}
+
+Scalar GraphArea::GetContentHeight() const
+{
+    Scalar height = bounds_.bottom - bounds_.top;
+    if (labelVisible_)
+        height -= labelHeight_;
+
+    return height;
 }
 
 void GraphArea::MinMaxData()
@@ -182,6 +195,11 @@ void GraphArea::OnFitIdx(int begin, int end)
     MinMaxData();
 }
 
+void GraphArea::OnMoveCrosshair(Point point)
+{
+    crosshairPoint_ = point;
+}
+
 void GraphArea::OnPaint(GraphContext *ctx)
 {
     // TODO: 标签
@@ -193,6 +211,13 @@ void GraphArea::OnPaint(GraphContext *ctx)
 
     if (graphics_.empty())
         return;
+
+    Scalar offY = 0;
+    if (labelVisible_)
+    {
+        offY = labelHeight_;
+        size.height -= labelHeight_;
+    }
 
     DataSet& raw = panel_->DataRef();
 
@@ -209,6 +234,11 @@ void GraphArea::OnPaint(GraphContext *ctx)
         data.sWidth = 1;
     data.sMargin = data.sWidth / 4;
 
+    if (labelVisible_)
+        OnPaintLabel(ctx, data);
+
+    ctx->Translate({0, offY});
+
     // 绘制刻度线
     ctx->SetColor(scaleLineColor_);
     for (auto &item : scales_)
@@ -220,18 +250,89 @@ void GraphArea::OnPaint(GraphContext *ctx)
     // 绘制图形
     OnPaintGraph(ctx, data);
 
-    // 绘制刻度轴
-    ctx->SetTranslate({bounds_.left-lAxis_->GetWidth(), bounds_.top});
+    // 绘制十字准线
+    OnPaintCrosshair(ctx, data);
+
+    // 绘制刻度轴 TODO: 临时方案，这会导致坐标原点很乱 @_@
+    ctx->SetTranslate({bounds_.left-lAxis_->GetWidth(), bounds_.top + offY});
     lAxis_->OnPaint(ctx, data, size.height);
 
-    ctx->SetTranslate({bounds_.right, bounds_.top});
+    ctx->SetTranslate({bounds_.right, bounds_.top + offY});
     rAxis_->OnPaint(ctx, data, size.height);
+}
+
+void GraphArea::OnPaintLabel(GraphContext *ctx, DrawData& data)
+{
+    int index = data.Count() - 1;
+
+    Scalar offX = 0;
+    Scalar width = bounds_.right - bounds_.left;
+
+    if (crosshairPoint_.x != -1)
+    {
+        index = ((width - crosshairPoint_.x) / data.sWidth);
+        index = (data.Count()-1) - index;
+        if (index < 0)
+            index = 0;
+    }
+
+    ctx->SetColor(labelBackColor_);
+    ctx->SetFont(FontId_WRYH, 8);
+    ctx->FillRect(0, 0, width, labelHeight_);
+
+    wchar_t txtBuf[128] = {0};
+    for (const auto &item : graphics_)
+    {
+        if (isnan(item->centralAxis))
+            ctx->SetColor(item->GetColor(data, index));
+        else
+            ctx->SetColor(item->GetColorWithCA(data, index));
+
+        for (ColumnKey key : item->cids)
+        {
+            WStr labelName = WStr::FromUTF8(key->name);
+            DataType val = data.Get(key, index);
+            WStr labelVal = WStr::ToString(val, item->Digit);
+
+            swprintf(txtBuf, L"%s:%s ", labelName.c_str(), labelVal.c_str());
+
+            Size size = ctx->MeasureStr(txtBuf);
+            if (offX + size.width > width)
+                return;
+
+            ctx->DrawStr(txtBuf, {offX, (labelHeight_ - size.height) / 2});
+            offX += size.width;
+        }
+    }
 }
 
 void GraphArea::OnPaintGraph(GraphContext *ctx, DrawData& data)
 {
     for (const auto &item: graphics_)
         item->Paint(ctx, data);
+}
+
+void GraphArea::OnPaintCrosshair(GraphContext *ctx, DrawData& data)
+{
+    if (crosshairPoint_.x == -1
+     && crosshairPoint_.y == -1)
+        return;
+
+    ctx->SetColor(panel_->GetCrosshairColor());
+
+    Scalar height = GetContentHeight();
+    Scalar width = (bounds_.right - bounds_.left);
+
+    if (crosshairPoint_.x != -1)
+    {
+        ctx->DrawLine(crosshairPoint_.x, 0,
+                      crosshairPoint_.x, height);
+    }
+    if (crosshairPoint_.y != -1)
+    {
+        ctx->DrawLine(0, crosshairPoint_.y,
+                      width, crosshairPoint_.y);
+    }
 }
 
 }
