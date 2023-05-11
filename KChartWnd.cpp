@@ -224,6 +224,8 @@ LRESULT KChartWnd::OnMessage(
             nRes = OnLBtnDown(wParam, lParam); break;
         case WM_MOUSEMOVE:
             nRes = OnMouseMove(wParam, lParam); break;
+        case WM_DESTROY:
+            handle_ = NULL; // no break
 
         default:
             return DefWindowProcA(handle_, msg, wParam, lParam);

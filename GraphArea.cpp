@@ -269,15 +269,10 @@ void GraphArea::OnPaintLabel(GraphContext *ctx, DrawData& data)
     Scalar width = bounds_.right - bounds_.left;
 
     if (crosshairPoint_.x != -1)
-    {
-        index = ((width - crosshairPoint_.x) / data.sWidth);
-        index = (data.Count()-1) - index;
-        if (index < 0)
-            index = 0;
-    }
+        index = data.ToIdx(crosshairPoint_.x);
 
     ctx->SetColor(labelBackColor_);
-    ctx->SetFont(FontId_WRYH, 8);
+    ctx->SetFont(FontId_WRYH, 10);
     ctx->FillRect(0, 0, width, labelHeight_);
 
     wchar_t txtBuf[128] = {0};

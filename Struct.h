@@ -91,11 +91,36 @@ public:
     }
 
     inline Scalar ToPX(int idx) const {
+        if ((size.width/sWidth) > count)
+            return idx * sWidth + (sWidth/2 + 1);
+
         return size.width - (count - idx) * sWidth + (sWidth/2+1);
     }
 
     inline Scalar ToPY(DataType val) const {
         return size.height - Scalar(hRatio * float(val - bias));
+    }
+
+    inline int ToIdx(Scalar px) const {
+        int index = 0;
+        int last = count - 1;
+        if ((size.width/sWidth) > count) {
+            index = px / sWidth;
+        } else {
+//            index = ((size.width - px) / sWidth);
+//            index = (count - 1) - index;
+            index = last - (px / sWidth);
+        }
+        if (index < 0)
+            return 0;
+        if (index > last)
+            return last;
+        return index;
+    }
+
+    inline DataType ToData(Scalar py) const {
+        //(size.height - py)
+        return 0;
     }
 
 private:

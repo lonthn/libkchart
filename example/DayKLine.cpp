@@ -178,14 +178,10 @@ void MACD(DataSet& data, GraphArea *area)
 void MessageLoop()
 {
     MSG msg;
-    while (::GetMessageA(&msg, NULL, 0, 0))
+    while (wnd->Handle() && ::GetMessageA(&msg, NULL, 0, 0))
     {
         ::TranslateMessage(&msg);
         ::DispatchMessage(&msg);
-
-        if (msg.message == WM_QUIT
-         || msg.message == WM_CLOSE)
-            break;
 
         if (msg.message == WM_KEYDOWN) {
             if (msg.wParam == VK_UP)
