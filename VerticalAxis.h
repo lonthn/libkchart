@@ -28,7 +28,7 @@ public:
     , transformFn_(ToStringWithDigit)
     { }
 
-    void SetTransformFn(TransformFn fn) {
+    void SetScaleFormatter(TransformFn fn) {
         transformFn_ = fn;
     }
 

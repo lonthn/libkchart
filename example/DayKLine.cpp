@@ -30,30 +30,30 @@ int WINAPI WinMain(
     wnd = new KChartWnd();
     wnd->CreateWin(NULL);
 
-
-    /// 创建图形绘制区域
     GraphArea *mainArea = wnd->CreateArea(0.7f);
     GraphArea *volumeArea = wnd->CreateArea(0.2f);
     GraphArea *indiArea = wnd->CreateArea(0.2f);
 
-    volumeArea->GetLeftAxis()->SetTransformFn(ToStringWithUnit);
-    volumeArea->GetRightAxis()->SetTransformFn(ToStringWithUnit);
+    // 由于成交量数字较大, 在展示刻度时可以用带单位的形式.
+    volumeArea->GetLeftAxis()->SetScaleFormatter(ToStringWithUnit);
+    volumeArea->GetRightAxis()->SetScaleFormatter(ToStringWithUnit);
 
 
-    /// 绑定数据
+    // 将文件中的历史日K数据加载到 DataSet 中,
     DataSet& data = wnd->DataRef();
     LoadKLineData("SH000001.csv", data);
 
 
-    /// 添加图形
+    // 在主图区域添加K线图形, 需要用到数据集中的开高低收4列数据.
     mainArea->AddGraphics(new KLineGraph(data));
-    // 添加MA指标线
+    // 添加主图指标MA.
     MA(data, mainArea, 5);
     MA(data, mainArea, 10);
     MA(data, mainArea, 20);
     MA(data, mainArea, 30);
     MA(data, mainArea, 60);
 
+    // 副图成交量以及MACD指标.
     volumeArea->AddGraphics(new VolumeGraph(data));
     MACD(data, indiArea);
 
@@ -118,11 +118,12 @@ void MA(DataSet& data, GraphArea *area, int num)
     for (; i < off; i++)
     {
         closeSum += data[close][i];
-        data[ma][i] = NAN;
+        data[ma][i] = NAN; // NAN 表示空数据, 不用绘制.
     }
 
     for (; i < row; i++) {
         closeSum += data[close][i];
+        // 当日MA(n) = 前n-1日以及当日收盘价 / n
         data[ma][i] = closeSum / DataType(num);
         closeSum -= data[close][i-off];
     }
@@ -165,10 +166,11 @@ void MACD(DataSet& data, GraphArea *area)
         data[macd][i] = (difv - preDEA) * 2;
     }
 
+    // macd 需以 0 为中心轴.
     area->SetCentralAxis(0);
 
     HistogramGraph *hg = new HistogramGraph(macd);
-    hg->FixedWidth = 1;
+    hg->FixedWidth = 1; // macd 使用的是柱线图
 
     area->AddGraphics(hg);
     area->AddGraphics(new PolyLineGraph(dif));

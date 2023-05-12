@@ -19,6 +19,8 @@ class WndProcThunk;
 
 namespace kchart {
 
+/// @brief 容纳图表的窗体类, 可作为独立窗口运行, 也可以是
+/// 窗体中的一个控件.
 class KChartWnd
 {
 public:
@@ -39,6 +41,8 @@ public:
         return crosshairColor_;
     }
 
+    /// @brief 必须调用的函数, 使用WindowsAPI创建窗体
+    /// hParent 即父窗体的句柄, 可为空.
     virtual bool CreateWin(HWND hParent = nullptr);
 
     virtual Scalar Width() const;
@@ -54,12 +58,19 @@ public:
     virtual void SetTitle(const Str& str);
 
     virtual void Show(bool show);
+    /// @brief 使界面内容失效, 从而触发重绘事件
+    /// 若使界面发生了变化, 必须要调用此函数进行重绘.
     virtual void Invalidate();
 
     virtual Rect GetAreaBounds();
 
+    /// @brief 创建图形区域, 可以创建多个(上下结构),
+    /// 每个区域都是独立的坐标系, percent 可以指定高
+    /// 度权重(内部根据权重分配高度).
     virtual GraphArea *CreateArea(float percent);
 
+    /// @brief 对图形进行缩放.
+    /// factor 正数放大, 负数缩小.
     virtual void Zoom(int factor);
 
 public:
@@ -90,6 +101,7 @@ private:
     Color borderColor_;
     Size size_;
 
+    // 是否显示纵轴坐标(包括左右两边).
     bool lvVisible_;
     bool rvVisible_;
     Scalar vAxisWidth_;
@@ -102,6 +114,8 @@ private:
     Color crosshairColor_;
     Point crosshairPoint_;
 
+    // 控制能够显示的数据范围, 这个范围是可以超过 DataSet
+    // 中现存的数据.
     int beginIdx_;
     int endIdx_;
     int sWidth_;

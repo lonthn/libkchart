@@ -26,15 +26,24 @@ struct Index2
     int col;
 };
 
+/// @brief 原始数据集, 以2维表格的形式存储图形对应的原始
+/// 数据且可随时扩容.
+/// @details 通常我们会创建一个图形或者自定义图形, 并提
+/// 供根据图形所需的数据对应的 ColumnKey(通过AddCol/FindCol获得).
 struct DataSet
 {
 public:
     DataSet();
 
+    /// @brief 添加列, 需提供列名.
     ColumnKey AddCol(const Str& name);
+    /// @brief 添加一行.
     int       AddRow();
+    /// @brief 添加行, 可指定行数.
     void      AddRow(int n);
 
+    /// @brief 根据列名查找 ColumnKey(类索引, 用于获取
+    /// 对应列的数据).
     ColumnKey FindCol(const Str& name);
 
     inline int RowCount() const { return rowCount; }
@@ -45,7 +54,6 @@ public:
     DataType Get(ColumnKey col, int row);
     void     Set(int col, int row, DataType val);
     void     Set(const Index2& idx, DataType val);
-
     DataRows& operator[](int col);
     DataRows& operator[](ColumnKey col);
 
@@ -55,14 +63,19 @@ private:
     std::map<Str, ColumnInfo> colKeys;
 };
 
+/// @brief 在绘图时，这里有你需要的数据.
 struct DrawData
 {
 public:
+    // 绘图区域大小
     Size   size;
+    // 单个图形占宽
     Scalar sWidth;
+    // 单个图形的边距
     Scalar sMargin;
-    float wRatio;
-    float hRatio;
+
+    float  wRatio;
+    float  hRatio;
     DataType bias;
 
     DrawData(DataSet& data, int off, int count)
@@ -90,6 +103,8 @@ public:
         return data.Get(idx.col, off + idx.row);
     }
 
+    /// @brief 获取数据的X轴位置, 由于单个图形有自己的占宽,
+    /// 所以为了方便绘图, 我们会返回居中位置.
     inline Scalar ToPX(int idx) const {
         if ((size.width/sWidth) > count)
             return idx * sWidth + (sWidth/2 + 1);
@@ -97,19 +112,22 @@ public:
         return size.width - (count - idx) * sWidth + (sWidth/2+1);
     }
 
+    /// @brief 获取数据的Y轴位置
     inline Scalar ToPY(DataType val) const {
         return size.height - Scalar(hRatio * float(val - bias));
     }
 
+    /// @brief 根据屏幕横坐标获得对应数据索引
     inline int ToIdx(Scalar px) const {
-        int index = 0;
+        int index;
         int last = count - 1;
+        // 一般来说, else 的方案就能得到索引, 但要考虑当图形未
+        // 充满界面时是从左边开始绘图的.
         if ((size.width/sWidth) > count) {
             index = px / sWidth;
         } else {
-//            index = ((size.width - px) / sWidth);
-//            index = (count - 1) - index;
-            index = last - (px / sWidth);
+            index = ((size.width - px) / sWidth);
+            index = last - index;
         }
         if (index < 0)
             return 0;
@@ -118,6 +136,7 @@ public:
         return index;
     }
 
+    /// @brief 根据屏幕纵坐标轴算出具体数据
     inline DataType ToData(Scalar py) const {
         //(size.height - py)
         return 0;

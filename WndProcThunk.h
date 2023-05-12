@@ -160,7 +160,7 @@ public:
         machine code            assembly instruction     comment
         -------------------       -----------------------    ----
         48B8 ????????????????   mov RAX,pThis
-        // 4808                    mov qword ptr [RAX],RCX    ;m_hWnd=[this]=RCX
+        ; 4808                    mov qword ptr [RAX],RCX    ;m_hWnd=[this]=RCX
         4889C1                  mov RCX,RAX                ;RCX=pThis
         48B8 ????????????????   mov RAX,ProcPtr
         FFE0                    jmp RAX        
