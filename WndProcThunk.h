@@ -22,7 +22,7 @@
     #define GENERAL_THUNK_LENGTH    10
     #define KCALLBACK                      //__thiscall is default
 #else
-    #define WNDPROC_THUNK_LENGTH    20     //__stdcall calling convention ONLY,assign m_hWnd by thunk
+    #define WNDPROC_THUNK_LENGTH    23     //__stdcall calling convention ONLY,assign m_hWnd by thunk
     #define GENERAL_THUNK_LENGTH    16
     #define KCALLBACK __stdcall
 #endif
@@ -51,8 +51,8 @@ public:
 		}
     }
 
-    inline LONG GetThunkedCodePtr() {
-		return reinterpret_cast<LONG>(&machineCodes_[0]);
+    inline LONG_PTR GetThunkedCodePtr() {
+		return reinterpret_cast<LONG_PTR>(&machineCodes_[0]);
 	}
 
 protected:
@@ -160,17 +160,20 @@ public:
         machine code            assembly instruction     comment
         -------------------       -----------------------    ----
         48B8 ????????????????   mov RAX,pThis
-        4808                    mov qword ptr [RAX],RCX    ;m_hWnd=[this]=RCX
+        // 4808                    mov qword ptr [RAX],RCX    ;m_hWnd=[this]=RCX
         4889C1                  mov RCX,RAX                ;RCX=pThis
         48B8 ????????????????   mov RAX,ProcPtr
         FFE0                    jmp RAX        
         */
         *((uint16_t*)&machineCodes_[ 0]) = 0xB848;
         *((uint64_t*)&machineCodes_[ 2]) = thisPtr;
-        *((uint32_t*)&machineCodes_[10]) = 0x89480848;
-        *((uint32_t*)&machineCodes_[14]) = 0x00B848C1;
-        *((uint64_t*)&machineCodes_[17]) = procPtr;
-        *((uint16_t*)&machineCodes_[25]) = 0xE0FF;
+        // TODO: 不知为什么，下面这行汇编破坏了内存 [@author:luo-zeqi]
+//        *((uint32_t*)&machineCodes_[10]) = 0x48088948;
+//        *((uint32_t*)&machineCodes_[14]) = 0xB848C189;
+        *((uint32_t*)&machineCodes_[10]) = 0x48C18948;
+        *((uint32_t*)&machineCodes_[14]) = 0xB8;
+        *((uint64_t*)&machineCodes_[15]) = procPtr;
+        *((uint16_t*)&machineCodes_[23]) = 0xE0FF;
 #endif
     }
 }; // class WndProcThunk

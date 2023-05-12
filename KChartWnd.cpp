@@ -81,8 +81,8 @@ bool KChartWnd::CreateWin(HWND hParent)
 
     handle_ = hWnd;
 
-    LONG ptr = procThunk_->GetThunkedCodePtr();
-    SetWindowLongA(handle_, GWLP_WNDPROC, ptr);
+    LONG_PTR ptr = procThunk_->GetThunkedCodePtr();
+    SetWindowLongPtrA(handle_, GWLP_WNDPROC, ptr);
 
     return true;
 }
