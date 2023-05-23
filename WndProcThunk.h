@@ -167,9 +167,11 @@ public:
         */
         *((uint16_t*)&machineCodes_[ 0]) = 0xB848;
         *((uint64_t*)&machineCodes_[ 2]) = thisPtr;
-        // TODO: 不知为什么，下面这行汇编破坏了内存 [@author:luo-zeqi]
-//        *((uint32_t*)&machineCodes_[10]) = 0x48088948;
-//        *((uint32_t*)&machineCodes_[14]) = 0xB848C189;
+        // [@author:luo-zeqi]
+        // 由于使用该类的 KChartWnd 存在虚函数，其首地址所存的值被虚函数表
+        // 占用，因此下面这行汇编会破坏内存，且这目前没有意义，先将其注释。
+        //*((uint32_t*)&machineCodes_[10]) = 0x48088948;
+        //*((uint32_t*)&machineCodes_[14]) = 0xB848C189;
         *((uint32_t*)&machineCodes_[10]) = 0x48C18948;
         *((uint32_t*)&machineCodes_[14]) = 0xB8;
         *((uint64_t*)&machineCodes_[15]) = procPtr;
