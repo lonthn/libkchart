@@ -25,6 +25,7 @@ class KChartWnd
 {
 public:
     KChartWnd();
+    virtual ~KChartWnd();
 
     HWND Handle() {
         return handle_;

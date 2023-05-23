@@ -43,6 +43,30 @@ KChartWnd::KChartWnd()
     gcContext_ = new GdiPlusGC();
 }
 
+KChartWnd::~KChartWnd()
+{
+    if (gcContext_ != NULL)
+    {
+        delete gcContext_;
+        gcContext_ = NULL;
+    }
+    if (procThunk_ != NULL)
+    {
+        delete procThunk_;
+        procThunk_ = NULL;
+    }
+
+    for (int i = 0; i < areas_.size(); i++)
+    {
+        delete areas_[i];
+        delete lvAxis_[i];
+        delete rvAxis_[i];
+    }
+    areas_.clear();
+    lvAxis_.clear();
+    rvAxis_.clear();
+}
+
 bool KChartWnd::CreateWin(HWND hParent)
 {
     WNDCLASSA cls;

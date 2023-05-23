@@ -27,6 +27,7 @@ public:
     , alignToRight_(aRight)
     , transformFn_(ToStringWithDigit)
     { }
+    virtual ~VerticalAxis() = default;
 
     void SetScaleFormatter(TransformFn fn) {
         transformFn_ = fn;

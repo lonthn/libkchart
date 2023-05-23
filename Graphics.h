@@ -20,6 +20,7 @@ public:
     , NormalColor(0xFFFFFFFF) {
         cids.resize(colNum, 0);
     }
+    virtual ~Graphics() = default;
 
     /// 在图形被加入GraphArea后，GraphArea会在ColorList中
     /// 选取一个颜色进行设置, 当然我们也可以自定义颜色.
