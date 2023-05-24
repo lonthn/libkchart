@@ -158,9 +158,9 @@ public:
         DataType open = data.Get(openKey_, i);
         DataType close = data.Get(closeKey_, i);
 
-        if (open > close)
+        if (open < close)
             return UpColor;
-        else if (open < close)
+        else if (open > close)
             return DownColor;
 
         return NormalColor;
