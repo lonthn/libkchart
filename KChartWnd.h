@@ -93,6 +93,7 @@ protected:
     virtual LRESULT OnMouseMove(WPARAM wParam, LPARAM lParam);
 
 private:
+    void FillDrawData(GraphArea * area, DrawData& data);
     void Layout();
     void FitNewWidth();
 

@@ -87,7 +87,7 @@ Scalar GraphArea::GetContentHeight() const
     return height;
 }
 
-void GraphArea::MinMaxData()
+void GraphArea::UpdateMinMax()
 {
     cacheMin_ = INT16_MAX;
     cacheMax_ = INT16_MIN;
@@ -192,7 +192,7 @@ void GraphArea::OnFitIdx(int begin, int end)
 
     validCache_ = false;
 
-    MinMaxData();
+    UpdateMinMax();
 }
 
 void GraphArea::OnMoveCrosshair(Point point)
@@ -200,7 +200,7 @@ void GraphArea::OnMoveCrosshair(Point point)
     crosshairPoint_ = point;
 }
 
-void GraphArea::OnPaint(GraphContext *ctx)
+void GraphArea::OnPaint(GraphContext *ctx, DrawData& data)
 {
     // TODO: 标签
 
@@ -218,21 +218,6 @@ void GraphArea::OnPaint(GraphContext *ctx)
         offY = labelHeight_;
         size.height -= labelHeight_;
     }
-
-    DataSet& raw = panel_->DataRef();
-
-    int wCount = end_ - begin_;
-    DataType hCount = cacheMax_ - cacheMin_;
-
-    DrawData data(raw, begin_, min(wCount, raw.RowCount()));
-    data.size = size;
-    data.bias = cacheMin_;
-    data.wRatio = float(size.width) / float(wCount);
-    data.hRatio = float(size.height) / float(hCount);
-    data.sWidth  = Scalar(data.wRatio);
-    if (data.sWidth < 3)
-        data.sWidth = 1;
-    data.sMargin = data.sWidth / 4;
 
     if (labelVisible_)
         OnPaintLabel(ctx, data);
@@ -253,12 +238,7 @@ void GraphArea::OnPaint(GraphContext *ctx)
     // 绘制十字准线
     OnPaintCrosshair(ctx, data);
 
-    // 绘制刻度轴 TODO: 临时方案，这会导致坐标原点很乱 @_@
-    ctx->SetTranslate({bounds_.left-lAxis_->GetWidth(), bounds_.top + offY});
-    lAxis_->OnPaint(ctx, data, size.height);
-
-    ctx->SetTranslate({bounds_.right, bounds_.top + offY});
-    rAxis_->OnPaint(ctx, data, size.height);
+    ctx->Translate({0, -offY});
 }
 
 void GraphArea::OnPaintLabel(GraphContext *ctx, DrawData& data)

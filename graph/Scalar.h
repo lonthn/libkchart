@@ -10,14 +10,6 @@ namespace kchart {
 // 用于衡量图形各维的参数
 typedef int Scalar;
 
-struct Rect
-{
-    Scalar left;
-    Scalar top;
-    Scalar right;
-    Scalar bottom;
-};
-
 struct Size
 {
     Scalar width;
@@ -28,6 +20,30 @@ struct Point
 {
     Scalar x;
     Scalar y;
+};
+
+struct Rect
+{
+    Scalar left;
+    Scalar top;
+    Scalar right;
+    Scalar bottom;
+
+    inline Scalar Width() {
+        return right - left;
+    }
+
+    inline Scalar Height() {
+        return bottom - top;
+    }
+
+    inline Point Point() {
+        return {left, top};
+    }
+
+    inline Size  Size() {
+        return { Width(), Height() };
+    }
 };
 
 }

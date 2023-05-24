@@ -315,25 +315,55 @@ LRESULT KChartWnd::OnPaint(WPARAM wParam, LPARAM lParam)
 
     for (int i = 0; i < (int) areas_.size(); i++)
     {
-        GraphArea *area = areas_[i];
-        Rect bounds = area->GetBounds();
-        gcContext_->SetTranslate({bounds.left, bounds.top});
-        area->OnPaint(gcContext_);
-        gcContext_->SetTranslate({0, 0});
+        GraphArea    *area   = areas_[i];
+        VerticalAxis *lvAxis = lvAxis_[i];
+        VerticalAxis *rvAxis = rvAxis_[i];
 
-        if (i != areas_.size() - 1)
-        {
-            gcContext_->SetColor(borderColor_);
-            gcContext_->DrawLine(bounds.left, bounds.bottom,
-                                 bounds.right, bounds.bottom);
+        Rect bounds = area->GetBounds();
+        Scalar contentHeight = area->GetContentHeight();
+
+        int showCount = min(endIdx_ - beginIdx_, data_.RowCount());
+        DrawData data(data_, beginIdx_, showCount);
+        FillDrawData(area, data);
+
+        gcContext_->SetTranslate({0, bounds.top});
+
+        if (lvVisible_) {
+            lvAxis->OnPaint(gcContext_, data, contentHeight);
+            gcContext_->Translate({vAxisWidth_, 0});
         }
+
+        area->OnPaint(gcContext_, data);
+
+        if (rvVisible_) {
+            gcContext_->Translate({bounds.Width(), 0});
+            rvAxis->OnPaint(gcContext_, data, contentHeight);
+        }
+
+        // ºáÖáÏß
+        gcContext_->SetTranslate({0});
+        gcContext_->SetColor(borderColor_);
+        gcContext_->DrawLine(
+            bounds.left, bounds.bottom,
+            bounds.right, bounds.bottom
+        );
     }
 
+    // ×ÝÖáÏß
+    Rect bounds = GetAreaBounds();
     gcContext_->SetColor(borderColor_);
-    gcContext_->DrawLine(vAxisWidth_, 0,
-                         vAxisWidth_, Height());
-    gcContext_->DrawLine(Width() - vAxisWidth_, 0,
-                         Width() - vAxisWidth_, Height());
+    if (lvVisible_) {
+        gcContext_->DrawLine(
+            bounds.left, bounds.top,
+            bounds.left, bounds.bottom
+        );
+    }
+    if (rvVisible_) {
+        gcContext_->DrawLine(
+            bounds.right, bounds.top,
+            bounds.right, bounds.bottom
+        );
+    }
 
     gcContext_->SwapBuffer(paint.hdc);
 
@@ -372,6 +402,27 @@ LRESULT KChartWnd::OnMouseMove(WPARAM wParam, LPARAM lParam)
     }
 
     return 1;
+}
+
+void KChartWnd::FillDrawData(GraphArea * area, DrawData& data)
+{
+    Rect bounds = area->GetBounds();
+
+    int      wCount = endIdx_ - beginIdx_;
+    DataType hCount = area->GetMax() - area->GetMin();
+    Size   drawSize = {
+        bounds.right - bounds.left,
+        area->GetContentHeight()
+    };
+
+    data.size   = drawSize;
+    data.bias   = area->GetMin();
+    data.wRatio = float(drawSize.width) / float(wCount);
+    data.hRatio = float(drawSize.height) / float(hCount);
+    data.sWidth = sWidth_;
+    if (data.sWidth < 3)
+        data.sWidth = 1;
+    data.sMargin = data.sWidth / 4;
 }
 
 void KChartWnd::Layout()

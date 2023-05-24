@@ -58,19 +58,27 @@ protected:
         return labelVisible_ ? labelHeight_ : 0;
     }
 
+    DataType GetMin() const {
+        return cacheMin_;
+    }
+
+    DataType GetMax() const {
+        return cacheMax_;
+    }
+
     const DataRows& GetScales() {
         return scales_;
     }
 
     Scalar GetContentHeight() const;
 
-    virtual void MinMaxData();
+    virtual void UpdateMinMax();
     virtual void UpdateScales();
 
     virtual void OnFitIdx(int begin, int end);
     virtual void OnMoveCrosshair(Point point);
 
-    virtual void OnPaint(GraphContext *ctx);
+    virtual void OnPaint(GraphContext *ctx, DrawData& data);
     virtual void OnPaintLabel(GraphContext *ctx, DrawData& data);
     virtual void OnPaintGraph(GraphContext *ctx, DrawData& data);
     virtual void OnPaintCrosshair(GraphContext *ctx, DrawData& data);
