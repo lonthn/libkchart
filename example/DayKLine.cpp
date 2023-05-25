@@ -13,8 +13,8 @@ using namespace kchart;
 void LoadKLineData(const char *file, DataSet& data);
 
 /// 计算指标数据并绑定图形. 注意：以下指标计算依赖 CLOSE 列数据.
-void MA(DataSet& data, GraphArea *area, int num);
-void MACD(DataSet& data, GraphArea *area);
+std::vector<Graphics *> MA(DataSet& data, const std::vector<int>& nums);
+std::vector<Graphics *> MACD(DataSet& data);
 
 void MessageLoop();
 
@@ -30,33 +30,28 @@ int WINAPI WinMain(
     wnd = new KChartWnd();
     wnd->CreateWin(NULL);
 
-    GraphArea *mainArea = wnd->CreateArea(0.7f);
-    GraphArea *volumeArea = wnd->CreateArea(0.2f);
-    GraphArea *indiArea = wnd->CreateArea(0.2f);
+    GraphArea *mainArea = wnd->CreateArea(0.6f);
+    GraphArea *ind1Area = wnd->CreateArea(0.2f);
+    GraphArea *ind2Area = wnd->CreateArea(0.2f);
 
     // 由于成交量数字较大, 在展示刻度时可以用带单位的形式.
-    volumeArea->GetLeftAxis()->SetScaleFormatter(ToStringWithUnit);
-    volumeArea->GetRightAxis()->SetScaleFormatter(ToStringWithUnit);
-
+    ind1Area->GetLeftAxis()->SetScaleFormatter(ToStringWithUnit);
+    ind1Area->GetRightAxis()->SetScaleFormatter(ToStringWithUnit);
 
     // 将文件中的历史日K数据加载到 DataSet 中,
     DataSet& data = wnd->DataRef();
-    LoadKLineData("SH000001.csv", data);
-
+    LoadKLineData("SZ000001.csv", data);
 
     // 在主图区域添加K线图形, 需要用到数据集中的开高低收4列数据.
     mainArea->AddGraphics(new KLineGraph(data));
     // 添加主图指标MA.
-    MA(data, mainArea, 5);
-    MA(data, mainArea, 10);
-    MA(data, mainArea, 20);
-    MA(data, mainArea, 30);
-    MA(data, mainArea, 60);
-
+    mainArea->AddGraphics(MA(data, {5, 10, 15, 30, 60}));
     // 副图成交量以及MACD指标.
-    volumeArea->AddGraphics(new VolumeGraph(data));
-    MACD(data, indiArea);
+    ind1Area->AddGraphics(new VolumeGraph(data));
+    ind2Area->AddGraphics(MACD(data));
 
+    // MACD 指标图需要中心轴.
+    ind2Area->SetCentralAxis(0.0f);
 
     wnd->Show(TRUE);
     MessageLoop();
@@ -65,12 +60,11 @@ int WINAPI WinMain(
 
 void LoadKLineData(const char *file, DataSet& data)
 {
-//  symbol,date,open,high,low,close,volume,count
-//  SH000001,202201040000,768.8720,803.7480,767.4470,803.7480,302111788,2928518397
-//  SH000001,202201050000,768.8720,803.7480,767.4470,803.7480,302111788,2928518397
+//  symbol,date,open,high,low,close,volume
+//  SH000001,20220104,768.8720,803.7480,767.4470,803.7480,302111788,2928518397
+//  SH000001,20220105,768.8720,803.7480,767.4470,803.7480,302111788,2928518397
 //  ...
 
-    // 注意! 文件中的数据并不是真实市场行情数据, 不具备任何参考意义.
     std::ifstream ifs(file, std::ios::binary);
     assert(ifs.is_open());
 
@@ -83,55 +77,66 @@ void LoadKLineData(const char *file, DataSet& data)
     const int bufSize = 1024;
     char buf[bufSize];
 
+    // Skip the header.
+    ifs.getline(buf, bufSize - 1, '\n');
+
     while (!ifs.eof())
     {
         ifs.getline(buf, bufSize - 1, '\n');
 
-        Str line(buf);
-        if (line.empty())
+        CStringA line(buf);
+        if (line.IsEmpty())
             continue;
 
-        std::vector<Str> fields = line.split(',');
-        if (fields[0] == "symbol")
-            continue;
+        std::vector<CStringA> fields;
+        StrSplit(line.GetString(), ",", true, fields);
+
+        char* endptr = nullptr;
 
         int idx = data.AddRow();
-        data[open] [idx] = fields[2].toFloat();
-        data[high] [idx] = fields[3].toFloat();
-        data[low]  [idx] = fields[4].toFloat();
-        data[close][idx] = fields[5].toFloat();
-        data[vol]  [idx] = fields[6].toFloat();
+        data[open ][idx] = std::strtof(fields[2], &endptr);
+        data[high ][idx] = std::strtof(fields[3], &endptr);
+        data[low  ][idx] = std::strtof(fields[4], &endptr);
+        data[close][idx] = std::strtof(fields[5], &endptr);
+        data[vol  ][idx] = std::strtof(fields[6], &endptr);
     }
 }
 
-void MA(DataSet& data, GraphArea *area, int num)
+std::vector<Graphics *> MA(DataSet& data, const std::vector<int>& nums)
 {
+    int row = data.RowCount();
     ColumnKey close = data.FindCol("CLOSE");
 
-    ColumnKey ma = data.AddCol("MA" + Str::ToString(num));
-    int row = data.RowCount();
+    auto ma = [&](int n) {
+        ColumnKey ma = data.AddCol("MA" + std::to_string(n));
 
-    DataType closeSum = 0;
+        DataType closeSum = 0;
+        int i = 0;
+        int off = n - 1;
+        for (; i < off; i++)
+        {
+            closeSum += data[close][i];
+            data[ma][i] = NAN; // NAN 表示空数据, 不用绘制.
+        }
 
-    int i = 0;
-    int off = num - 1;
-    for (; i < off; i++)
-    {
-        closeSum += data[close][i];
-        data[ma][i] = NAN; // NAN 表示空数据, 不用绘制.
-    }
+        for (; i < row; i++) {
+            closeSum += data[close][i];
+            // 当日MA(n) = 前n-1日以及当日收盘价之和 / n
+            data[ma][i] = closeSum / DataType(n);
+            closeSum -= data[close][i-off];
+        }
 
-    for (; i < row; i++) {
-        closeSum += data[close][i];
-        // 当日MA(n) = 前n-1日以及当日收盘价 / n
-        data[ma][i] = closeSum / DataType(num);
-        closeSum -= data[close][i-off];
-    }
+        return new PolyLineGraph(ma);
+    };
 
-    area->AddGraphics(new PolyLineGraph(ma));
+    std::vector<Graphics *> graph;
+    for (int n : nums)
+        graph.push_back(ma(n));
+
+    return graph;
 }
 
-void MACD(DataSet& data, GraphArea *area)
+std::vector<Graphics *> MACD(DataSet& data)
 {
     ColumnKey close = data.FindCol("CLOSE");
 
@@ -166,15 +171,16 @@ void MACD(DataSet& data, GraphArea *area)
         data[macd][i] = (difv - preDEA) * 2;
     }
 
-    // macd 需以 0 为中心轴.
-    area->SetCentralAxis(0);
+    std::vector<Graphics *> graphics;
 
     HistogramGraph *hg = new HistogramGraph(macd);
     hg->FixedWidth = 1; // macd 使用的是柱线图
 
-    area->AddGraphics(hg);
-    area->AddGraphics(new PolyLineGraph(dif));
-    area->AddGraphics(new PolyLineGraph(dea));
+    graphics.push_back(hg);
+    graphics.push_back(new PolyLineGraph(dif));
+    graphics.push_back(new PolyLineGraph(dea));
+
+    return graphics;
 }
 
 void MessageLoop()
