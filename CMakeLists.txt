@@ -11,14 +11,13 @@ ENDIF(WIN32)
 include_directories(.)
 
 set(source
-  ./Str.cpp
-  ./WStr.cpp
   ./KChartWnd.cpp
   ./Graphics.cpp
   ./Struct.cpp
   ./GraphArea.cpp
   ./graph/GdiPlusGC.cpp
-  ./VerticalAxis.cpp)
+  ./VerticalAxis.cpp
+)
 
 
 add_library(${PROJECT_NAME}
@@ -29,4 +28,5 @@ link_libraries(${PROJECT_NAME})
 
 add_executable(example
 		example/DayKLine.cpp
+        #example/Timeshare.cpp)
 		)

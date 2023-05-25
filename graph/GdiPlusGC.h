@@ -50,8 +50,8 @@ public:
     void AddPolyLine(const Point& p) override;
     void EndPolyLine() override;
 
-    void DrawStr(const WStr& str, const Point &p) override;
-    Size MeasureStr(const WStr& str) override;
+    void DrawStr(const CStringW& str, const Point &p) override;
+    Size MeasureStr(const CStringW& str) override;
 
 private:
     HDC     memDC_;

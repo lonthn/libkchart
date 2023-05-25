@@ -7,7 +7,9 @@
 
 #include "Scalar.h"
 #include "Color.h"
-#include "WStr.h"
+
+#include <vector>
+#include <atlstr.h>
 
 namespace kchart {
 
@@ -19,7 +21,7 @@ static FontId FontId_WRYH  = 1;
 class GraphContext
 {
 public:
-    std::vector<WStr> fontFamilies_;
+    std::vector<CStringW> fontFamilies_;
 
     GraphContext()
     {
@@ -56,8 +58,8 @@ public:
     virtual void AddPolyLine(const Point& p) { }
     virtual void EndPolyLine() { }
 
-    virtual void DrawStr(const WStr& str, const Point &p) { }
-    virtual Size MeasureStr(const WStr& str) { return {0, 0}; }
+    virtual void DrawStr(const CStringW& str, const Point &p) { }
+    virtual Size MeasureStr(const CStringW& str) { return {0, 0}; }
 };
 
 }

@@ -113,7 +113,7 @@ void GdiPlusGC::SetFont(FontId fontId, int size)
     Gdiplus::Font *& font = fontCache_[key];
     if (font == NULL)
         font = new Gdiplus::Font(
-                fontFamilies_[FontId_WRYH].c_str(),
+                fontFamilies_[FontId_WRYH].GetString(),
                 Gdiplus::REAL(size)
         );
 
@@ -217,7 +217,7 @@ void GdiPlusGC::EndPolyLine()
 }
 
 
-void GdiPlusGC::DrawStr(const WStr& str, const Point &p)
+void GdiPlusGC::DrawStr(const CStringW& str, const Point &p)
 {
 //    Gdiplus::GraphicsPath graphicsPathObj;
 //    Gdiplus::FontFamily fontfamily;
@@ -227,11 +227,11 @@ void GdiPlusGC::DrawStr(const WStr& str, const Point &p)
 
     Gdiplus::PointF location(Gdiplus::REAL(p.x + offset_.x),
                              Gdiplus::REAL(p.y + offset_.y));
-    gdiGraph_->DrawString(str.c_str(), (int) str.length(),
+    gdiGraph_->DrawString(str.GetString(), str.GetLength(),
                           gdiFont_, location, gdiBrush_);
 }
 
-Size GdiPlusGC::MeasureStr(const WStr& str)
+Size GdiPlusGC::MeasureStr(const CStringW& str)
 {
     Gdiplus::StringFormat format(Gdiplus::StringAlignmentNear);
 
@@ -241,7 +241,7 @@ Size GdiPlusGC::MeasureStr(const WStr& str)
     // gdiGraph_->SetTextRenderingHint(Gdiplus::TextRenderingHintClearTypeGridFit );
 
     //获得字体高度与宽度stringRect
-    gdiGraph_->MeasureString(str.c_str(), (int) str.length(),
+    gdiGraph_->MeasureString(str.GetString(), str.GetLength(),
                              gdiFont_, layoutRect,
                              &format, &stringRect);
     return {Scalar(stringRect.Width), Scalar(stringRect.Height)};

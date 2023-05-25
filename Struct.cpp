@@ -4,6 +4,8 @@
 
 #include "Struct.h"
 
+#include <atlconv.h>
+
 namespace kchart {
 
 DataSet::DataSet()
@@ -11,7 +13,7 @@ DataSet::DataSet()
 {
 }
 
-ColumnKey DataSet::AddCol(const Str& name)
+ColumnKey DataSet::AddCol(const std::string& name)
 {
     if (name.empty())
         return nullptr;
@@ -20,7 +22,9 @@ ColumnKey DataSet::AddCol(const Str& name)
     if (iter != colKeys.end())
         return &iter->second;
 
-    colKeys.emplace(name, ColumnInfo{name, ColCount()});
+    USES_CONVERSION;
+    CStringW wname = A2W(name.c_str());
+    colKeys.emplace(name, ColumnInfo{wname, ColCount()});
     cols.emplace_back(rowCount);
 
     return &colKeys[name];
@@ -44,7 +48,7 @@ void DataSet::AddRow(int n)
     rowCount += n;
 }
 
-ColumnKey DataSet::FindCol(const Str& name)
+ColumnKey DataSet::FindCol(const std::string& name)
 {
     auto iter = colKeys.find(name);
     if (iter != colKeys.end())

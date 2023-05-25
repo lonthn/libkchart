@@ -6,17 +6,18 @@
 #define LIBKCHART_STRUCT_H
 
 #include "Def.h"
-#include "Str.h"
 #include "graph/Scalar.h"
 
 #include <vector>
 #include <map>
+#include <string>
+#include <atlstr.h>
 
 namespace kchart {
 
 typedef struct ColumnInfo
 {
-    Str name;
+    CStringW name;
     int index;
 } * ColumnKey;
 
@@ -36,7 +37,7 @@ public:
     DataSet();
 
     /// @brief 添加列, 需提供列名.
-    ColumnKey AddCol(const Str& name);
+    ColumnKey AddCol(const std::string& name);
     /// @brief 添加一行.
     int       AddRow();
     /// @brief 添加行, 可指定行数.
@@ -44,7 +45,7 @@ public:
 
     /// @brief 根据列名查找 ColumnKey(类索引, 用于获取
     /// 对应列的数据).
-    ColumnKey FindCol(const Str& name);
+    ColumnKey FindCol(const std::string& name);
 
     inline int RowCount() const { return rowCount; }
     inline int ColCount() const { return (int) cols.size(); }
@@ -60,7 +61,7 @@ public:
 private:
     DataCols cols;
     int rowCount;
-    std::map<Str, ColumnInfo> colKeys;
+    std::map<std::string, ColumnInfo> colKeys;
 };
 
 /// @brief 在绘图时，这里有你需要的数据.
@@ -106,6 +107,10 @@ public:
     /// @brief 获取数据的X轴位置, 由于单个图形有自己的占宽,
     /// 所以为了方便绘图, 我们会返回居中位置.
     inline Scalar ToPX(int idx) const {
+        if (wRatio < 1) {
+            return Scalar(wRatio * float(idx));
+        }
+
         if ((size.width/sWidth) > count)
             return idx * sWidth + (sWidth/2 + 1);
 
