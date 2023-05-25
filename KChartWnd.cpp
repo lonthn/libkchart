@@ -71,8 +71,8 @@ bool KChartWnd::CreateWin(HWND hParent)
 {
     WNDCLASSA cls;
 
-    Str  className = ClassName();
-    Str  wndName   = "KChartWnd";
+    std::string className = ClassName();
+    std::string wndName   = "KChartWnd";
     HINSTANCE hInstance = GetModuleHandleA(NULL);
 
     if (GVClassReg)
@@ -124,7 +124,7 @@ Scalar KChartWnd::Height() const
 Size   KChartWnd::GetSize() const { return {}; }
 Point  KChartWnd::GetLocation() const { return {}; }
 Rect   KChartWnd::GetBounds() const { return {}; }
-Str KChartWnd::GetTitle() const { return ""; }
+std::string KChartWnd::GetTitle() const { return {}; }
 
 void KChartWnd::SetSize(const Size& size)
 {
@@ -140,7 +140,7 @@ void KChartWnd::SetBounds(const Rect& rect)
 
 }
 
-void KChartWnd::SetTitle(const Str& str)
+void KChartWnd::SetTitle(const std::string& str)
 {
 
 }
@@ -198,9 +198,16 @@ GraphArea *KChartWnd::CreateArea(float weight)
 
 void KChartWnd::Zoom(int factor)
 {
-    sWidth_ += factor * 2;
-    if (sWidth_ < 0)
-        sWidth_ = 1;
+    if (factor == 0)
+        return;
+
+    if (sWidth_ < 1 || (sWidth_ == 1 && factor < 0)) {
+        sWidth_ += float(factor) * 0.2f;
+    } else {
+        sWidth_ += float(factor * 2);
+    }
+    if (sWidth_ <= 0)
+        sWidth_ = 0.2f;
 
     FitNewWidth();
 
@@ -320,7 +327,7 @@ LRESULT KChartWnd::OnPaint(WPARAM wParam, LPARAM lParam)
         VerticalAxis *rvAxis = rvAxis_[i];
 
         Rect bounds = area->GetBounds();
-        Scalar contentHeight = area->GetContentHeight();
+        Scalar offY = area->GetContentTop();
 
         int showCount = min(endIdx_ - beginIdx_, data_.RowCount());
         DrawData data(data_, beginIdx_, showCount);
@@ -329,7 +336,7 @@ LRESULT KChartWnd::OnPaint(WPARAM wParam, LPARAM lParam)
         gcContext_->SetTranslate({0, bounds.top});
 
         if (lvVisible_) {
-            lvAxis->OnPaint(gcContext_, data, contentHeight);
+            lvAxis->OnPaint(gcContext_, data, offY);
             gcContext_->Translate({vAxisWidth_, 0});
         }
 
@@ -337,7 +344,7 @@ LRESULT KChartWnd::OnPaint(WPARAM wParam, LPARAM lParam)
 
         if (rvVisible_) {
             gcContext_->Translate({bounds.Width(), 0});
-            rvAxis->OnPaint(gcContext_, data, contentHeight);
+            rvAxis->OnPaint(gcContext_, data, offY);
         }
 
         // ºáÖáÏß
@@ -379,14 +386,9 @@ LRESULT KChartWnd::OnLBtnDown(WPARAM wParam, LPARAM lParam)
 
     crosshairVisible_ = !crosshairVisible_;
     if (crosshairVisible_)
-    {
         OnSetCrosshairPoint({LOWORD(lParam), HIWORD(lParam)});
-    }
     else
-    {
         OnSetCrosshairPoint({-1, -1});
-    }
-
 
     Invalidate();
     return 0;
@@ -411,7 +413,7 @@ void KChartWnd::FillDrawData(GraphArea * area, DrawData& data)
     int      wCount = endIdx_ - beginIdx_;
     DataType hCount = area->GetMax() - area->GetMin();
     Size   drawSize = {
-        bounds.right - bounds.left,
+        bounds.Width(),
         area->GetContentHeight()
     };
 
@@ -419,7 +421,7 @@ void KChartWnd::FillDrawData(GraphArea * area, DrawData& data)
     data.bias   = area->GetMin();
     data.wRatio = float(drawSize.width) / float(wCount);
     data.hRatio = float(drawSize.height) / float(hCount);
-    data.sWidth = sWidth_;
+    data.sWidth = int(sWidth_);
     if (data.sWidth < 3)
         data.sWidth = 1;
     data.sMargin = data.sWidth / 4;
@@ -449,7 +451,7 @@ void KChartWnd::FitNewWidth()
     Rect rect = GetAreaBounds();
     Scalar width = rect.right - rect.left;
 
-    int newCount = int(float(width) / float(sWidth_));
+    int newCount = int(float(width) / sWidth_);
     if (newCount > 0)
     {
         if (newCount > data_.RowCount())
@@ -460,9 +462,8 @@ void KChartWnd::FitNewWidth()
         else
         {
             if (endIdx_ > data_.RowCount() || endIdx_ == 0)
-            {
                 endIdx_ = data_.RowCount();
-            }
+
             beginIdx_ = endIdx_ - newCount;
         }
     }

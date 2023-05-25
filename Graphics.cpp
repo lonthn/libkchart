@@ -2,8 +2,10 @@
 // Created by luo-zeqi on 2013/4/17.
 //
 
-#include <algorithm>
 #include "Graphics.h"
+#include "StrUtils.h"
+
+#include <algorithm>
 
 namespace kchart {
 
@@ -62,8 +64,8 @@ void KLineGraph::Paint(GraphContext *gctx, const DrawData &data)
         else
         {
             DataType upStart, downStart;
-            upStart   = std::max(open, close);
-            downStart = std::min(open, close);
+            upStart   = max(open, close);
+            downStart = min(open, close);
             if (upStart < high)
             {
                 Scalar top = data.ToPY(high);
@@ -110,7 +112,7 @@ void KLineGraph::Paint(GraphContext *gctx, const DrawData &data)
     auto fn = [=](DataType num, int i)
     {
         Scalar dis = 10;
-        WStr str = WStr::ToString(num, Digit);
+        CStringW str = DoubleToStr(num, Digit);
         Size size = gctx->MeasureStr(str);
 
         Scalar halfHeight = size.height/2;

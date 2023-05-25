@@ -3,8 +3,9 @@
 //
 
 #include "GraphArea.h"
-
 #include "KChartWnd.h"
+
+#include <atlstr.h>
 
 namespace kchart {
 
@@ -21,13 +22,14 @@ GraphArea::GraphArea(KChartWnd *panel,
 , labelHeight_(20)
 , labelBackColor_(0xFF2C2F36) //0xFF1C1F26
 , crosshairPoint_({-1, -1})
+, crosshairIndex_(-1)
 , lAxis_(la)
 , rAxis_(ra)
 , scaleLineColor_(0xFF303030)
 , colorIdx_(0)
 , centralAxis_(NAN)
 {
-   colorList_.emplace_back(0xFF4cc45b);
+   colorList_.emplace_back(0xFFFFFFFF);
    colorList_.emplace_back(0xFFfff129);
    colorList_.emplace_back(0xFF5373e8);
    colorList_.emplace_back(0xFFf59241);
@@ -39,16 +41,6 @@ GraphArea::GraphArea(KChartWnd *panel,
    colorList_.emplace_back(0xFF469990);
    colorList_.emplace_back(0xFFdcbeff);
    colorList_.emplace_back(0xFF9A6324);
-   colorList_.emplace_back(0xFFfffac8);
-   colorList_.emplace_back(0xFF800000);
-   colorList_.emplace_back(0xFFaaffc3);
-   colorList_.emplace_back(0xFF808000);
-   colorList_.emplace_back(0xFFffd8b1);
-   colorList_.emplace_back(0xFF000075);
-   colorList_.emplace_back(0xFFa9a9a9);
-   colorList_.emplace_back(0xFFe6194B);
-   colorList_.emplace_back(0xFFffffff);
-   colorList_.emplace_back(0xFF000000);
 }
 
 DataType GraphArea::GetCentralAxis()
@@ -78,6 +70,17 @@ bool GraphArea::AddGraphics(Graphics *graph)
     return true;
 }
 
+bool GraphArea::AddGraphics(const std::vector<Graphics *>& graph) {
+    for (auto *item : graph)
+        AddGraphics(item);
+    return true;
+}
+
+Scalar GraphArea::GetContentTop() const
+{
+    return labelVisible_ ? labelHeight_ : 0;
+}
+
 Scalar GraphArea::GetContentHeight() const
 {
     Scalar height = bounds_.bottom - bounds_.top;
@@ -85,6 +88,38 @@ Scalar GraphArea::GetContentHeight() const
         height -= labelHeight_;
 
     return height;
+}
+
+void GraphArea::ReGatherLabel(GraphContext *ctx, DrawData& data)
+{
+    int count = 0;
+    for (const auto &item : graphics_)
+    {
+        Color color;
+        if (isnan(item->centralAxis))
+            color = item->GetColor(data, crosshairIndex_);
+        else
+            color = item->GetColorWithCA(data, crosshairIndex_);
+
+        for (ColumnKey key : item->cids)
+        {
+            if (count == labels_.size())
+                labels_.emplace_back();
+
+            Label& label = labels_[count++];
+
+            label.color = color;
+
+            DataType val = data.Get(key, crosshairIndex_);
+            CStringW labelVal = DoubleToStr(val, item->Digit);
+            label.text.Format(
+                L"%s:%s ",
+                key->name.GetString(),
+                labelVal.GetString()
+            );
+            label.size = ctx->MeasureStr(label.text);
+        }
+    }
 }
 
 void GraphArea::UpdateMinMax()
@@ -100,11 +135,9 @@ void GraphArea::UpdateMinMax()
 
     for (const auto &item : graphics_)
     {
-        for (auto *cid : item->cids)
-        {
+        for (auto *cid : item->cids) {
             DataRows& col = data[cid];
-            for (int j = begin_; j < end; j++)
-            {
+            for (int j = begin_; j < end; j++) {
                 if (col[j] < cacheMin_)
                     cacheMin_ = col[j];
 
@@ -171,7 +204,7 @@ void GraphArea::UpdateScales()
                 start += step;
             }
         } else {
-            while (start > cacheMin_) {
+            while ((start-step) > cacheMin_) {
                 start -= step;
             }
         }
@@ -202,13 +235,6 @@ void GraphArea::OnMoveCrosshair(Point point)
 
 void GraphArea::OnPaint(GraphContext *ctx, DrawData& data)
 {
-    // TODO: 标签
-
-    Size size = {
-        (bounds_.right - bounds_.left),
-        (bounds_.bottom - bounds_.top)
-    };
-
     if (graphics_.empty())
         return;
 
@@ -216,20 +242,18 @@ void GraphArea::OnPaint(GraphContext *ctx, DrawData& data)
     if (labelVisible_)
     {
         offY = labelHeight_;
-        size.height -= labelHeight_;
-    }
-
-    if (labelVisible_)
         OnPaintLabel(ctx, data);
+    }
 
     ctx->Translate({0, offY});
 
     // 绘制刻度线
+    Scalar width = bounds_.Width();
     ctx->SetColor(scaleLineColor_);
     for (auto &item : scales_)
     {
         Scalar y = data.ToPY(item);
-        ctx->DrawLine(0, y, size.width, y);
+        ctx->DrawLine(0, y, width, y);
     }
 
     // 绘制图形
@@ -245,39 +269,32 @@ void GraphArea::OnPaintLabel(GraphContext *ctx, DrawData& data)
 {
     int index = data.Count() - 1;
 
-    Scalar offX = 0;
-    Scalar width = bounds_.right - bounds_.left;
+    Scalar width = bounds_.Width();
 
     if (crosshairPoint_.x != -1)
         index = data.ToIdx(crosshairPoint_.x);
 
+    if (crosshairIndex_ != index)
+    {
+        crosshairIndex_ = index;
+        ReGatherLabel(ctx, data);
+    }
+
     ctx->SetColor(labelBackColor_);
-    ctx->SetFont(FontId_WRYH, 10);
     ctx->FillRect(0, 0, width, labelHeight_);
 
-    wchar_t txtBuf[128] = {0};
-    for (const auto &item : graphics_)
+    ctx->SetFont(FontId_WRYH, 10);
+
+    Scalar offX = 0;
+    for (Label& label : labels_)
     {
-        if (isnan(item->centralAxis))
-            ctx->SetColor(item->GetColor(data, index));
-        else
-            ctx->SetColor(item->GetColorWithCA(data, index));
+        if (offX + label.size.width > width)
+            return;
 
-        for (ColumnKey key : item->cids)
-        {
-            WStr labelName = WStr::FromUTF8(key->name);
-            DataType val = data.Get(key, index);
-            WStr labelVal = WStr::ToString(val, item->Digit);
-
-            swprintf(txtBuf, L"%s:%s ", labelName.c_str(), labelVal.c_str());
-
-            Size size = ctx->MeasureStr(txtBuf);
-            if (offX + size.width > width)
-                return;
-
-            ctx->DrawStr(txtBuf, {offX, (labelHeight_ - size.height) / 2});
-            offX += size.width;
-        }
+        Scalar y = (labelHeight_ - label.size.height) / 2;
+        ctx->SetColor(label.color);
+        ctx->DrawStr(label.text, {offX, y});
+        offX += label.size.width;
     }
 }
 

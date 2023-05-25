@@ -9,14 +9,15 @@
 #include "graph/GraphContext.h"
 #include "Def.h"
 #include "Struct.h"
+#include "StrUtils.h"
 
 namespace kchart {
 
-typedef WStr (*TransformFn)(DataType);
+typedef CStringW (*TransformFn)(DataType);
 
 
-static WStr ToStringWithDigit(DataType val);
-static WStr ToStringWithUnit(DataType val);
+static CStringW ToStringWithDigit(DataType val);
+static CStringW ToStringWithUnit(DataType val);
 
 class VerticalAxis
 {
@@ -38,9 +39,11 @@ public:
     }
 
     virtual void OnSetScales(const DataRows &scales);
-
-    virtual void OnPaint(GraphContext *ctx, DrawData& data,
-                         Scalar height);
+    virtual void OnPaint(
+        GraphContext *ctx,
+        DrawData& data,
+        Scalar offY
+    );
 
 private:
     bool     alignToRight_;
@@ -50,22 +53,22 @@ private:
     TransformFn transformFn_;
 
     DataRows scales_;
-    std::vector<WStr> strScales_;
+    std::vector<CStringW> strScales_;
 };
 
-static WStr ToStringWithDigit(DataType val)
+static CStringW ToStringWithDigit(DataType val)
 {
-    return WStr::ToString(val, 2);
+    return DoubleToStr(val, 2);
 }
 
-static WStr ToStringWithUnit(DataType val)
+static CStringW ToStringWithUnit(DataType val)
 {
     if (val < 10000)
-        return WStr::ToString(val, 2);
+        return DoubleToStr(val, 2);
     else if (val < 100000000.0)
-        return WStr::ToString(val/10000.0f, 2) + L"万";
+        return DoubleToStr(val / 10000.0f, 2) + L"万";
     else
-        return WStr::ToString(val/100000000.0f, 2) + L"亿";
+        return DoubleToStr(val / 100000000.0f, 2) + L"亿";
 }
 
 }

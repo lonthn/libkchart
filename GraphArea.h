@@ -10,6 +10,8 @@
 #include "graph/GraphContext.h"
 #include "Graphics.h"
 
+#include <atlstr.h>
+
 namespace kchart {
 
 class KChartWnd;
@@ -25,6 +27,7 @@ public:
     virtual void SetCentralAxis(DataType n);
 
     virtual bool AddGraphics(Graphics *graph);
+    virtual bool AddGraphics(const std::vector<Graphics *>& graph);
 
     virtual VerticalAxis *GetLeftAxis() {
         return lAxis_;
@@ -70,7 +73,10 @@ protected:
         return scales_;
     }
 
+    Scalar GetContentTop() const;
     Scalar GetContentHeight() const;
+
+    void ReGatherLabel(GraphContext *ctx, DrawData& data);
 
     virtual void UpdateMinMax();
     virtual void UpdateScales();
@@ -90,9 +96,17 @@ protected:
     Rect bounds_;
     Rect graphArea_;
     Point crosshairPoint_;
+    int   crosshairIndex_;
     Scalar labelHeight_;
     bool   labelVisible_;
     Color  labelBackColor_;
+
+    struct Label {
+        CStringW text;
+        Color    color;
+        Size     size;
+    };
+    std::vector<Label> labels_;
 
     int begin_;
     int end_;

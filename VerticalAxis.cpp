@@ -18,26 +18,33 @@ void VerticalAxis::OnSetScales(const DataRows &scales)
     }
 }
 
-void VerticalAxis::OnPaint(GraphContext *ctx, DrawData& data,
-                           Scalar height)
+void VerticalAxis::OnPaint(
+    GraphContext *ctx,
+    DrawData& data,
+    Scalar offY
+)
 {
     ctx->SetColor(scaleColor_);
     ctx->SetFont(FontId_WRYH, 10);
 
     Scalar pad = 5;
 
+    ctx->Translate({0, offY});
+
     for (int i = 0; i < (int) scales_.size(); i++)
     {
         Scalar y = data.ToPY(scales_[i]);
 
         Size size = ctx->MeasureStr(strScales_[i]);
+        Scalar x = pad;
         if (alignToRight_) {
-            ctx->DrawStr(strScales_[i], {width_ - size.width - pad,
-                                         y - (size.height / 2)});
-        } else {
-            ctx->DrawStr(strScales_[i], {pad, y - (size.height / 2)});
+            x = width_ - size.width - pad;
         }
+
+        ctx->DrawStr(strScales_[i], {x, y - (size.height / 2)});
     }
+
+    ctx->Translate({0, -offY});
 }
 
 }

@@ -5,8 +5,6 @@
 #ifndef WINCTRL_KLINEWND_H
 #define WINCTRL_KLINEWND_H
 
-#include "Str.h"
-
 #include "GraphArea.h"
 #include "Graphics.h"
 #include "Struct.h"
@@ -46,17 +44,17 @@ public:
     /// hParent 即父窗体的句柄, 可为空.
     virtual bool CreateWin(HWND hParent = nullptr);
 
-    virtual Scalar Width() const;
-    virtual Scalar Height() const;
-    virtual Size   GetSize() const;
-    virtual Point  GetLocation() const;
-    virtual Rect   GetBounds() const;
-    virtual Str    GetTitle() const;
+    virtual Scalar   Width() const;
+    virtual Scalar   Height() const;
+    virtual Size     GetSize() const;
+    virtual Point    GetLocation() const;
+    virtual Rect     GetBounds() const;
+    virtual std::string GetTitle() const;
 
     virtual void SetSize(const Size& size);
     virtual void SetLocation(const Point& point);
     virtual void SetBounds(const Rect& rect);
-    virtual void SetTitle(const Str& str);
+    virtual void SetTitle(const std::string& str);
 
     virtual void Show(bool show);
     /// @brief 使界面内容失效, 从而触发重绘事件
@@ -75,7 +73,7 @@ public:
     virtual void Zoom(int factor);
 
 public:
-    static Str ClassName() {
+    static std::string ClassName() {
         return "WINEX_CLS_KChart";
     }
 
@@ -120,7 +118,7 @@ private:
     // 中现存的数据.
     int beginIdx_;
     int endIdx_;
-    int sWidth_;
+    float sWidth_;
     DataSet data_;
 
     WndProcThunk *procThunk_;
