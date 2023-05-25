@@ -23,8 +23,8 @@ void KLineGraph::Paint(GraphContext *gctx, const DrawData &data)
     DataType min = data.Get(cids[Low], minIdx);
     DataType max = data.Get(cids[High], maxIdx);
 
-    // 反向绘制使得窗体缩放时不会导致图形抖动
-    for (int i = data.Count() - 1; i >= 0; i--)
+    int count = data.Count();
+    for (int i = 0; i < count; i++)
     {
         Scalar x = data.ToPX(i);
 
@@ -146,7 +146,8 @@ void KLineGraph::Paint(GraphContext *gctx, const DrawData &data)
 void PolyLineGraph::Paint(GraphContext *gctx, const DrawData &data)
 {
     int i = 0;
-    for (; i < data.Count(); i++)
+    int count = data.Count();
+    for (; i < count; i++)
     {
         DataType val = data.Get(cids[0], i);
         if (!isnan(val))
@@ -155,16 +156,14 @@ void PolyLineGraph::Paint(GraphContext *gctx, const DrawData &data)
 
     gctx->SetColor(GetColor(data, 0));
 
-    gctx->BeginPolyLine(data.Count() - i);
-
-    for (int j = data.Count() - 1; j >= i; j--)
+    gctx->BeginPolyLine(count - i);
+    for (; i < count; i++)
     {
-        DataType val = data.Get(cids[0], j);
-        Scalar x = data.ToPX(j);
+        DataType val = data.Get(cids[0], i);
+        Scalar x = data.ToPX(i);
         Scalar y = data.ToPY(val);
         gctx->AddPolyLine({x, y});
     }
-
     gctx->EndPolyLine();
 }
 
@@ -180,8 +179,8 @@ void HistogramGraph::Paint(GraphContext *gctx, const DrawData &data)
 
     // gctx->SetColor(NormalColor);
 
-    // 反向绘制使得窗体缩放时不会抖动
-    for (int i = data.Count() - 1; i >= 0; i--)
+    int count = data.Count();
+    for (int i = 0; i < count; i++)
     {
         DataType val  = data.Get(cids[0], i);
 
