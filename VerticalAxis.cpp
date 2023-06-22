@@ -6,45 +6,63 @@
 
 namespace kchart {
 
-void VerticalAxis::OnSetScales(const DataRows &scales)
-{
-    scales_.resize(scales.size());
-    strScales_.resize(scales.size());
+void VerticalAxis::OnSetScales(const DataRows &scales) {
+  scales_.resize(scales.size());
+  strScales_.resize(scales.size());
 
-    for (int i = 0; i < (int) scales.size(); i++)
-    {
-        scales_[i] = scales[i];
-        strScales_[i] = transformFn_(scales[i]);
-    }
+  for (int i = 0; i < (int) scales.size(); i++) {
+    scales_[i] = scales[i];
+    strScales_[i] = transformFn_(scales[i]);
+  }
+}
+
+void VerticalAxis::OnMoveCrosshair(Point point) {
+  crosshairY_ = point.y;
 }
 
 void VerticalAxis::OnPaint(
     GraphContext *ctx,
-    DrawData& data,
+    DrawData &data,
     Scalar offY
-)
-{
-    ctx->SetColor(scaleColor_);
-    ctx->SetFont(FontId_WRYH, 10);
+) {
+  ctx->SetFont(FontId_WRYH, 10);
 
-    Scalar pad = 5;
+  Scalar pad = 5;
 
-    ctx->Translate({0, offY});
+  ctx->Translate({0, offY});
 
-    for (int i = 0; i < (int) scales_.size(); i++)
-    {
-        Scalar y = data.ToPY(scales_[i]);
-
-        Size size = ctx->MeasureStr(strScales_[i]);
-        Scalar x = pad;
-        if (alignToRight_) {
-            x = width_ - size.width - pad;
-        }
-
-        ctx->DrawStr(strScales_[i], {x, y - (size.height / 2)});
+  auto draw = [&](Scalar y, CStringW &str, bool backFill) {
+    Size size = ctx->MeasureStr(str);
+    Scalar left = pad;
+    Scalar top = y - (size.height / 2);
+    if (alignToRight_) {
+      left = width_ - size.width - pad;
     }
 
-    ctx->Translate({0, -offY});
+    if (backFill) {
+      ctx->SetColor(crosshairBackColor_);
+      ctx->FillRect(left, top,
+                    left + size.width,
+                    top + size.height);
+    }
+
+    ctx->SetColor(scaleColor_);
+    ctx->DrawStr(str, {left, top});
+  };
+
+  for (int i = 0; i < (int) scales_.size(); i++) {
+    Scalar y = data.ToPY(scales_[i]);
+    draw(y, strScales_[i], false);
+  }
+
+  if (crosshairY_ != -1) {
+    DataType val = data.ToData(crosshairY_);
+    crosshairText_ = transformFn_(val);
+
+    draw(crosshairY_, crosshairText_, true);
+  }
+
+  ctx->Translate({0, -offY});
 }
 
 }

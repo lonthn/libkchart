@@ -5,13 +5,11 @@
 #ifndef LIBKCHART_AXIS_H
 #define LIBKCHART_AXIS_H
 
-class Axis
-{
+class Axis {
 public:
-    enum Type
-    {
+  enum Type {
 
-    };
+  };
 
 private:
 

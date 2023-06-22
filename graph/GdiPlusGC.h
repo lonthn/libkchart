@@ -13,65 +13,65 @@
 
 namespace kchart {
 
-class GdiPlusGC : public GraphContext
-{
+class GdiPlusGC : public GraphContext {
 public:
-    GdiPlusGC();
-    virtual ~GdiPlusGC();
+  GdiPlusGC();
 
-    void AllocBuffer(const Size& size);
-    void SwapBuffer(HDC dc);
+  virtual ~GdiPlusGC();
+
+  void AllocBuffer(const Size &size);
+  void SwapBuffer(HDC dc);
 
 public:
-    Point Translate(const Point& point) override;
-    void SetTranslate(const Point& point) override;
+  Point Translate(const Point &point) override;
+  void SetTranslate(const Point &point) override;
+  void SetFont(FontId fontId, int size) override;
+  void SetColor(Color color) override;
+  void SetLineWidth(int width) override;
 
-    void SetFont(FontId fontId, int size) override;
-    void SetColor(Color color) override;
+  void DrawRect(const Rect &r) override;
+  void DrawRect(
+      Scalar l, Scalar t, Scalar r, Scalar b
+  ) override;
 
-    void DrawRect(const Rect &r) override;
-    void DrawRect(
-        Scalar l, Scalar t, Scalar r, Scalar b
-    ) override;
+  void FillRect(const Rect &r) override;
+  void FillRect(
+      Scalar l, Scalar t, Scalar r, Scalar b
+  ) override;
 
-    void FillRect(const Rect &r) override;
-    void FillRect(
-        Scalar l, Scalar t, Scalar r, Scalar b
-    ) override;
+  void DrawLine(
+      const Point &a, const Point &b
+  ) override;
+  void DrawLine(
+      Scalar ax, Scalar ay, Scalar bx, Scalar by
+  ) override;
 
-    void DrawLine(
-        const Point &a, const Point &b
-    ) override;
-    void DrawLine(
-        Scalar ax, Scalar ay, Scalar bx, Scalar by
-    ) override;
+  void BeginPolyLine(int pointNum) override;
+  void AddPolyLine(const Point &p) override;
+  void EndPolyLine() override;
 
-    void BeginPolyLine(int pointNum) override;
-    void AddPolyLine(const Point& p) override;
-    void EndPolyLine() override;
-
-    void DrawStr(const CStringW& str, const Point &p) override;
-    Size MeasureStr(const CStringW& str) override;
+  void DrawStr(const CStringW &str, const Point &p) override;
+  Size MeasureStr(const CStringW &str) override;
 
 private:
-    HDC     memDC_;
-    HBITMAP memBitmap_;
+  HDC memDC_;
+  HBITMAP memBitmap_;
 
-    Color color_;
+  Color color_;
 
-    Gdiplus::Graphics   *gdiGraph_;
-    Gdiplus::Pen        *gdiPen_;
-    Gdiplus::SolidBrush *gdiBrush_;
-    Gdiplus::Font       *gdiFont_;
+  Gdiplus::Graphics *gdiGraph_;
+  Gdiplus::Pen *gdiPen_;
+  Gdiplus::SolidBrush *gdiBrush_;
+  Gdiplus::Font *gdiFont_;
 
-    int pointNum_;
-    std::vector<Gdiplus::Point> pointCache_;
+  int pointNum_;
+  std::vector<Gdiplus::Point> pointCache_;
 
-    Size cacheSize_;
+  Size cacheSize_;
 
-    Point offset_;
+  Point offset_;
 
-    std::map<uint64_t, Gdiplus::Font*> fontCache_;
+  std::map<uint64_t, Gdiplus::Font *> fontCache_;
 };
 
 }
