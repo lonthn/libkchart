@@ -16,7 +16,8 @@ public:
   explicit Graphics(int colNum)
       : centralAxis(NAN)
       , Digit(2)
-      , NormalColor(0xFFFFFFFF) {
+      , NormalColor(0xFFFFFFFF)
+      , ZeroOrigin(false) {
     cids.resize(colNum, 0);
   }
 
@@ -46,7 +47,9 @@ public:
 
   std::vector<ColumnKey> cids;
   DataType centralAxis;
-  int Digit;
+
+  bool  ZeroOrigin;
+  int   Digit;
   Color NormalColor;
 };
 
@@ -86,8 +89,11 @@ public:
 
 class PolyLineGraph : public Graphics {
 public:
-  explicit PolyLineGraph(ColumnKey col)
-      : Graphics(1) {
+  int LineWidth;
+
+  explicit PolyLineGraph(ColumnKey col, int lw = 1)
+      : Graphics(1)
+      , LineWidth(lw) {
     cids[0] = col;
   }
 
@@ -105,15 +111,16 @@ public:
 /// Öù×´Í¼
 class HistogramGraph : public Graphics {
 public:
-  Color UpColor;
-  Color DownColor;
+  Color  UpColor;
+  Color  DownColor;
   Scalar FixedWidth;
 
-  explicit HistogramGraph(ColumnKey key)
-      : Graphics(1) {
+  explicit HistogramGraph(ColumnKey key, Scalar fw = -1)
+      : Graphics(1)
+      , FixedWidth(fw) {
+    ZeroOrigin = true;
     UpColor = 0xFFFF4A4A;
     DownColor = 0xFF54FCFC;
-    FixedWidth = -1;
 
     cids[0] = key;
   }

@@ -13,11 +13,11 @@ namespace kchart {
 void sse_min_max(
     float *p,
     int count,
-    float *min,
-    float *max
+    float *pmin,
+    float *pmax
 ) {
-  __m128 ma = _mm_set_ps1(*min);
-  __m128 mb = _mm_set_ps1(*max);
+  __m128 ma = _mm_set_ps1(*pmin);
+  __m128 mb = _mm_set_ps1(*pmax);
   __m128 mc;
   int gCount = count / 4;
   for (int i = 0; i < gCount; ++i) {
@@ -26,14 +26,41 @@ void sse_min_max(
     mb = _mm_max_ps(mb, mc);
     p += 4;
   }
-  *min = min(
+  *pmin = min(
       min(ma.m128_f32[0], ma.m128_f32[1]),
       min(ma.m128_f32[2], ma.m128_f32[3])
   );
-  *max = max(
+  *pmax = max(
       max(mb.m128_f32[0], mb.m128_f32[1]),
       max(mb.m128_f32[2], mb.m128_f32[3])
   );
+  for (int i = 0; i < count % 4; ++i) {
+    *pmin = min(*pmin, p[i]);
+    *pmax = max(*pmax, p[i]);
+  }
+}
+
+// 使用 sse 加速查找最大最小值
+void sse_max(
+    float *p,
+    int count,
+    float *pmax
+) {
+  __m128 ma = _mm_set_ps1(*pmax);
+  __m128 mb;
+  int gCount = count / 4;
+  for (int i = 0; i < gCount; ++i) {
+    mb = _mm_load_ps(p);
+    ma = _mm_max_ps(ma, mb);
+    p += 4;
+  }
+  *pmax = max(
+      max(ma.m128_f32[0], ma.m128_f32[1]),
+      max(ma.m128_f32[2], ma.m128_f32[3])
+  );
+  for (int i = 0; i < count % 4; ++i) {
+    *pmax = max(*pmax, p[i]);
+  }
 }
 
 GraphArea::~GraphArea() {
@@ -157,15 +184,26 @@ void GraphArea::UpdateMinMax() {
   if (count == 0)
     return;
 
+  bool invalidCA = isnan(centralAxis_);
+
   for (const auto &item: graphics_) {
-    for (auto *cid: item->cids) {
-      DataRows &col = data.Get(cid);
-      sse_min_max(col.data() + begin_, count,
-                  &cacheMin_, &cacheMax_);
+    if (item->ZeroOrigin && invalidCA) {
+      cacheMin_ = 0;
+      for (auto *cid: item->cids) {
+        DataRows &col = data.Get(cid);
+        sse_max(col.data() + begin_, count,
+                &cacheMax_);
+      }
+    } else {
+      for (auto *cid: item->cids) {
+        DataRows &col = data.Get(cid);
+        sse_min_max(col.data() + begin_, count,
+                    &cacheMin_, &cacheMax_);
+      }
     }
   }
 
-  if (!isnan(centralAxis_)) {
+  if (!invalidCA) {
     DataType maxDis = cacheMax_ - centralAxis_;
     DataType minDis = centralAxis_ - cacheMin_;
     if (maxDis > minDis)

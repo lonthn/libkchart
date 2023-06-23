@@ -102,7 +102,7 @@ public:
   }
 
   /// @brief 获取数据的X轴位置, 由于单个图形有自己的占宽,
-  /// 所以为了方便绘图, 我们会返回居中位置.
+  /// 所以为了方便绘图, 返回居中位置.
   inline Scalar ToPX(int idx) const {
     if (sWidth == 1) {
       return Scalar(wRatio * float(idx));
@@ -123,13 +123,17 @@ public:
   inline int ToIdx(Scalar px) const {
     int index;
     int last = count - 1;
-    // 一般来说, else 的方案就能得到索引, 但要考虑当图形未
-    // 充满界面时是从左边开始绘图的.
-    if ((size.width / sWidth) > count) {
-      index = px / sWidth;
+    if (sWidth == 1) {
+      index = int(float(px) / wRatio);
     } else {
-      index = ((size.width - px) / sWidth);
-      index = last - index;
+      // 一般来说, else 的方案就能得到索引, 但要考虑当图形未
+      // 充满界面时是从左边开始绘图的.
+      if ((size.width / sWidth) > count) {
+        index = px / sWidth;
+      } else {
+        index = ((size.width - px) / sWidth);
+        index = last - index;
+      }
     }
     if (index < 0)
       return 0;

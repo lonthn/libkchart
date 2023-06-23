@@ -21,7 +21,7 @@ KChartWnd::KChartWnd()
     , size_({0})
     , sWidth_(5)
     , fixedCount_(false)
-    ,crosshairEnable_(true)
+    , crosshairEnable_(true)
     , crosshairVisible_(false)
     , crosshairColor_(0xFFFFFFFF)
     , crosshairPoint_({-1, -1})
@@ -42,6 +42,16 @@ KChartWnd::KChartWnd()
   procThunk_->init((uintptr_t) this, u.procPtr);
 
   gcContext_ = new GdiPlusGC();
+
+  hAxis_ = new HorizontalAxis(this);
+
+  rowCount_ = data_.RowCount();
+  data_.AddObserver([&](const Index2& idx) {
+    if (data_.RowCount() == rowCount_)
+      return;
+    rowCount_ = data_.RowCount();
+    hAxis_->OnFitIdx(beginIdx_, endIdx_);
+  });
 }
 
 KChartWnd::~KChartWnd() {
@@ -59,6 +69,9 @@ KChartWnd::~KChartWnd() {
     delete lvAxis_[i];
     delete rvAxis_[i];
   }
+
+  delete hAxis_;
+
   areas_.clear();
   lvAxis_.clear();
   rvAxis_.clear();
@@ -163,6 +176,8 @@ Rect KChartWnd::GetAreaBounds() {
   if (rvVisible_)
     bounds.right -= vAxisWidth_;
 
+  bounds.bottom -= hAxis_->GetHeight();
+
   return bounds;
 }
 
@@ -185,6 +200,20 @@ GraphArea *KChartWnd::CreateArea(float weight) {
   return area;
 }
 
+void KChartWnd::SetHAxis(HorizontalAxis *axis) {
+  if (axis == nullptr)
+    return;
+
+  delete hAxis_;
+
+  hAxis_ = axis;
+  hAxis_->OnFitIdx(beginIdx_, endIdx_);
+}
+
+HorizontalAxis *KChartWnd::GetHAxis() {
+  return hAxis_;
+}
+
 void KChartWnd::SetFixedCount(int count) {
   fixedCount_ = count > 0;
   if (fixedCount_) {
@@ -197,6 +226,8 @@ void KChartWnd::SetFixedCount(int count) {
     area->OnFitIdx(beginIdx_, endIdx_);
     area->UpdateScales();
   }
+
+  hAxis_->OnFitIdx(beginIdx_, endIdx_);
 }
 
 void KChartWnd::Zoom(int factor) {
@@ -220,7 +251,9 @@ void KChartWnd::Zoom(int factor) {
 void KChartWnd::OnSetCrosshairPoint(Point point) {
   crosshairPoint_ = point;
 
-  for (auto &item: areas_) {
+  int count = (int) areas_.size();
+  for (int i = 0; i < count; ++i) {
+    GraphArea *item = areas_[i];
     Rect bounds = item->GetBounds();
     bounds.top += item->GetLabelHeight();
 
@@ -236,6 +269,10 @@ void KChartWnd::OnSetCrosshairPoint(Point point) {
       y = -1;
 
     item->OnMoveCrosshair({x, y});
+
+    if (i == count - 1) {
+      hAxis_->OnMoveCrosshair({x, -1});
+    }
   }
 }
 
@@ -348,13 +385,18 @@ LRESULT KChartWnd::OnPaint(WPARAM wParam, LPARAM lParam) {
       rvAxis->OnPaint(gcContext_, data, offY);
     }
 
-//        // ºáÖáÏß
+    // ºáÖáÏß
     gcContext_->SetTranslate({0});
     gcContext_->SetColor(borderColor_);
     gcContext_->DrawLine(
         bounds.left, bounds.bottom,
         bounds.right, bounds.bottom
     );
+
+    if (i == (int) areas_.size() - 1) {
+      gcContext_->SetTranslate({bounds.left, bounds.bottom});
+      hAxis_->OnPaint(gcContext_, data, bounds.Width());
+    }
   }
 
   gcContext_->SetTranslate({0});
@@ -432,13 +474,13 @@ void KChartWnd::Layout() {
     weightSum += area->GetWeight();
   }
 
+  float height = float(Height() - hAxis_->GetHeight());
   Rect bounds = GetAreaBounds();
-
   bounds.bottom = bounds.top;
 
   for (auto &area: areas_) {
     float ratio = area->GetWeight() / weightSum;
-    bounds.bottom += Scalar(ratio * float(Height()));
+    bounds.bottom += Scalar(ratio * height);
     area->SetBounds(bounds);
     bounds.top = bounds.bottom;
   }
@@ -469,6 +511,8 @@ void KChartWnd::FitNewWidth() {
   for (const auto &item: areas_) {
     item->OnFitIdx(beginIdx_, endIdx_);
   }
+
+  hAxis_->OnFitIdx(beginIdx_, endIdx_);
 }
 
 } // namespace kchart

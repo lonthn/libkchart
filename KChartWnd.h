@@ -10,6 +10,7 @@
 #include "Struct.h"
 #include "graph/GdiPlusGC.h"
 #include "VerticalAxis.h"
+#include "HorizontalAxis.h"
 
 #include <Windows.h>
 
@@ -59,10 +60,19 @@ public:
 
   Rect GetAreaBounds();
 
-  /// @brief 创建图形区域, 可以创建多个(上下结构),
-  /// 每个区域都是独立的坐标系, percent 可以指定高
-  /// 度权重(内部根据权重分配高度).
-  virtual GraphArea *CreateArea(float percent);
+  /**
+   * @brief 创建图形区域, 可以创建多个(上下结构),
+   * 每个区域都是独立的坐标系, percent 可以指定高
+   * 度权重(内部根据权重分配高度).
+   */
+  GraphArea *CreateArea(float percent);
+  /**
+   * 设置横轴
+   * @param axis 提供一个经过重写的横轴实例.
+   * @return
+   */
+  void SetHAxis(HorizontalAxis *axis);
+  HorizontalAxis *GetHAxis();
   /**
    * @brief 设置将界面展示的数据条数固定
    * 设置后将无法使用 Zoom 和 MoveIdx
@@ -98,6 +108,10 @@ private:
 private:
   HWND handle_;
 
+  // 缓存当前数据条数, 通过观察数据集中的变化
+  // 判断是否有新增数据.
+  int rowCount_;
+
   Color borderColor_;
   Color backColor_;
   Size size_;
@@ -109,6 +123,7 @@ private:
   std::vector<VerticalAxis *> lvAxis_;
   std::vector<VerticalAxis *> rvAxis_;
   std::vector<GraphArea *> areas_;
+  HorizontalAxis *hAxis_;
 
   bool crosshairEnable_;
   bool crosshairVisible_;

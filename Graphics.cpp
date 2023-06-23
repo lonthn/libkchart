@@ -139,6 +139,7 @@ void PolyLineGraph::Paint(GraphContext *gctx, const DrawData &data) {
   }
 
   gctx->SetColor(GetColor(data, 0));
+  gctx->SetLineWidth(LineWidth);
 
   gctx->BeginPolyLine(count - i);
   for (; i < count; i++) {

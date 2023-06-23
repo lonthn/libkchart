@@ -7,11 +7,14 @@
 
 #include <vector>
 #include <fstream>
+#include <random>
 
 #define CKEY_OPEN   "OPEN"
 #define CKEY_CLOSE  "CLOSE"
 #define CKEY_AVG    "AVG-PRICE"
+#define CKEY_ORDERR "ORD-RATE"
 #define CKEY_VOLUME "VOLUME"
+#define CKEY_TIME   "TIME"
 
 using namespace kchart;
 
@@ -29,8 +32,13 @@ int WINAPI WinMain(
   wnd = new KChartWnd();
   wnd->CreateWin(NULL);
 
+  // 将文件中的历史数据加载到 DataSet 中
+  DataSet &data = wnd->DataRef();
+  LoadTimeshareData("SH000001-min.csv", data);
+
   // 241条分时数据
   wnd->SetFixedCount(241);
+  wnd->GetHAxis()->SetScaleCKey(data.FindCol(CKEY_TIME));
 
   GraphArea *mainArea = wnd->CreateArea(0.7f);
   GraphArea *indiArea = wnd->CreateArea(0.3f);
@@ -39,21 +47,18 @@ int WINAPI WinMain(
   indiArea->GetLeftAxis()->SetScaleFormatter(ToStringWithUnit);
   indiArea->GetRightAxis()->SetScaleFormatter(ToStringWithUnit);
 
-  // 将文件中的历史数据加载到 DataSet 中
-  DataSet &data = wnd->DataRef();
-  LoadTimeshareData("SH000001-min.csv", data);
-
   // 将中心轴设置为第一条数据.
   ColumnKey colKey = data.FindCol(CKEY_CLOSE);
   mainArea->SetCentralAxis(data.Get(colKey, 0));
   mainArea->SetBoldCentralAxis(true);
 
   // 在主图区域添加最新价以及均价线.
-  mainArea->AddGraphics(new PolyLineGraph(data.FindCol(CKEY_CLOSE)));
-  mainArea->AddGraphics(new PolyLineGraph(data.FindCol(CKEY_AVG)));
+  mainArea->AddGraphics(new HistogramGraph(data.FindCol(CKEY_ORDERR), 1));
+  mainArea->AddGraphics(new PolyLineGraph(data.FindCol(CKEY_CLOSE), 2));
+  mainArea->AddGraphics(new PolyLineGraph(data.FindCol(CKEY_AVG), 2));
   // 副图成交量.
   indiArea->AddGraphics(new VolumeGraph(data));
-  indiArea->SetLabelVisible(false);
+  //indiArea->SetLabelVisible(false);
 
   wnd->Show(TRUE);
   MessageLoop();
@@ -69,6 +74,8 @@ void LoadTimeshareData(const char *file, DataSet &data) {
   ColumnKey vol = data.AddCol(CKEY_VOLUME);
   ColumnKey avg = data.AddCol(CKEY_AVG);
   ColumnKey open = data.AddCol(CKEY_OPEN);
+  ColumnKey ord = data.AddCol(CKEY_ORDERR);
+  ColumnKey time = data.AddCol(CKEY_TIME);
 
   const int bufSize = 1024;
   char buf[bufSize];
@@ -88,11 +95,26 @@ void LoadTimeshareData(const char *file, DataSet &data) {
 
     int idx = data.AddRow();
     DataType volume = std::strtof(fields[2], &endptr);
+    data.Set(time, idx, (DataType) std::strtod(fields[0], &endptr));
     data.Set(close, idx, std::strtof(fields[1], &endptr) / 3);
     data.Set(vol, idx, volume - preVol);
     data.Set(avg, idx, std::strtof(fields[3], &endptr) / 3);
     data.Set(open, idx, std::strtof(fields[3], &endptr) / 3);
     preVol = volume;
+  }
+
+  // 随机生成每分钟的买卖盘比.
+  DataType min = 106920.34 - 250.0;
+  DataType max = 107670.34;
+  DataType x = max - min;
+  for (int i = 0; i < data.RowCount(); ++i) {
+    int sign = rand() % 2;
+
+    int in  = rand() % 100;
+    DataType rate = DataType(in) / 100 * 0.2;
+    if (sign == 0)
+      rate *= -1;
+    data.Set(ord, i, max + x * rate);
   }
 }
 
