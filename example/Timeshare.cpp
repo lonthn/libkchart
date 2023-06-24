@@ -88,17 +88,17 @@ void LoadTimeshareData(const char *file, DataSet &data) {
   while (!ifs.eof()) {
     ifs.getline(buf, bufSize - 1, '\n');
 
-    CStringA line(buf);
-    std::vector<CStringA> fields;
-    if (line.IsEmpty()) continue;
-    StrSplit(line.GetString(), ",", true, fields);
+    std::string line(buf);
+    std::vector<std::string> fields;
+    if (line.empty()) continue;
+    StrSplit(line.c_str(), ",", true, fields);
 
     int idx = data.AddRow();
-    DataType volume = std::strtof(fields[2], &endptr);
-    data.Set(time, idx, (DataType) std::strtod(fields[0], &endptr));
-    data.Set(close, idx, std::strtof(fields[1], &endptr) / 3);
+    DataType volume = std::strtof(fields[2].c_str(), &endptr);
+    data.Set(time, idx, (DataType) std::strtod(fields[0].c_str(), &endptr));
+    data.Set(close, idx, std::strtof(fields[1].c_str(), &endptr) / 3);
     data.Set(vol, idx, volume - preVol);
-    data.Set(avg, idx, std::strtof(fields[3], &endptr) / 3);
+    data.Set(avg, idx, std::strtof(fields[3].c_str(), &endptr) / 3);
     // 开盘价不做展示，仅仅只是为了确定成交量柱图的颜色.
     if (rand() % 2 == 1) {
       data.Set(open, idx, data.Get(close, idx) + 1);

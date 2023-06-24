@@ -69,6 +69,10 @@ void HorizontalAxis::OnPaint(
     Size size = ctx->MeasureStr(str);
     Scalar left = x - (size.width / 2);
     Scalar top = 3;
+    if (left < 0)
+      left = 0;
+    if ((left + size.width) > width)
+      left = width - size.width;
 
     if (backFill) {
       ctx->SetColor(crosshairBackColor_);
@@ -82,7 +86,7 @@ void HorizontalAxis::OnPaint(
   };
 
   for (int i = 0; i < (int) scales_.size(); i++) {
-    Scalar x = data.ToPX(scales_[i]);
+    Scalar x = data.ToPX(data.NativeIdx(scales_[i]));
     draw(x, strScales_[i], false);
   }
 

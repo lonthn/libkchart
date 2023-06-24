@@ -101,6 +101,9 @@ public:
   inline DataType Get(const Index2 &idx) const {
     return data.Get(idx.col, off + idx.row);
   }
+  inline int NativeIdx(int idx) const {
+    return idx - off;
+  }
 
   /// @brief 获取数据的X轴位置, 由于单个图形有自己的占宽,
   /// 所以为了方便绘图, 返回居中位置.
