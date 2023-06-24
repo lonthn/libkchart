@@ -14,14 +14,18 @@ namespace kchart {
 class Graphics {
 public:
   explicit Graphics(int colNum)
-      : centralAxis(NAN)
+      : centralAxis(KC_INVALID_DATA)
       , Digit(2)
-      , NormalColor(0xFFFFFFFF)
+      , NormalColor(0xFFF0F0F0)
       , ZeroOrigin(false) {
     cids.resize(colNum, 0);
   }
 
   virtual ~Graphics() = default;
+
+  virtual void ChangeTheme(bool white) {
+    NormalColor = white ? 0xFF101010 : 0xFFF0F0F0;
+  }
 
   /// 在图形被加入GraphArea后，GraphArea会在ColorList中
   /// 选取一个颜色进行设置, 当然我们也可以自定义颜色.
@@ -70,14 +74,20 @@ public:
 
   explicit KLineGraph(DataSet &data)
       : Graphics(4) {
-    UpColor = 0xFFFF4A4A;
+    UpColor   = 0xFFFF4A4A;
     DownColor = 0xFF54FCFC;
-    TextColor = 0xFFFFFFFF;
+    TextColor = NormalColor;
 
-    cids[Open] = data.FindCol("OPEN");
-    cids[High] = data.FindCol("HIGH");
-    cids[Low] = data.FindCol("LOW");
+    cids[Open]  = data.FindCol("OPEN");
+    cids[High]  = data.FindCol("HIGH");
+    cids[Low]   = data.FindCol("LOW");
     cids[Close] = data.FindCol("CLOSE");
+  }
+
+  void ChangeTheme(bool white) override {
+    Graphics::ChangeTheme(white);
+    TextColor = NormalColor;
+    DownColor = white ? 0xFF10AB62 : 0xFF54FCFC;
   }
 
   void Paint(
@@ -96,6 +106,9 @@ public:
       , LineWidth(lw) {
     cids[0] = col;
   }
+
+  // 不需要切换
+  void ChangeTheme(bool) override {}
 
   bool SetColor(Color color) override {
     NormalColor = color;
@@ -123,6 +136,11 @@ public:
     DownColor = 0xFF54FCFC;
 
     cids[0] = key;
+  }
+
+  void ChangeTheme(bool white) override {
+    Graphics::ChangeTheme(white);
+    DownColor = white ? 0xFF10AB62 : 0xFF54FCFC;
   }
 
   Color GetColorWithCA(const DrawData &data, int i) override {

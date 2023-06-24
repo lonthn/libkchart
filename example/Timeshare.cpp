@@ -99,7 +99,12 @@ void LoadTimeshareData(const char *file, DataSet &data) {
     data.Set(close, idx, std::strtof(fields[1], &endptr) / 3);
     data.Set(vol, idx, volume - preVol);
     data.Set(avg, idx, std::strtof(fields[3], &endptr) / 3);
-    data.Set(open, idx, std::strtof(fields[3], &endptr) / 3);
+    // 开盘价不做展示，仅仅只是为了确定成交量柱图的颜色.
+    if (rand() % 2 == 1) {
+      data.Set(open, idx, data.Get(close, idx) + 1);
+    } else {
+      data.Set(open, idx, data.Get(close, idx) - 1);
+    }
     preVol = volume;
   }
 
@@ -123,5 +128,15 @@ void MessageLoop() {
   while (wnd->Handle() && ::GetMessageA(&msg, NULL, 0, 0)) {
     ::TranslateMessage(&msg);
     ::DispatchMessage(&msg);
+
+    if (msg.message == WM_KEYDOWN) {
+      if (msg.wParam == VK_F1) {
+        wnd->ChangeTheme(true);
+        wnd->Invalidate();
+      } else if (msg.wParam == VK_F2) {
+        wnd->ChangeTheme(false);
+        wnd->Invalidate();
+      }
+    }
   }
 }

@@ -58,6 +58,9 @@ public:
   /// 若使界面发生了变化, 必须要调用此函数进行重绘.
   void Invalidate();
 
+  /// @brief 切换主题: 日间或夜间
+  void ChangeTheme(bool white);
+
   Rect GetAreaBounds();
 
   /**

@@ -6,13 +6,21 @@
 
 namespace kchart {
 
+void VerticalAxis::SetScaleColor(Color color) {
+  scaleColor_ = color;
+}
+
+void VerticalAxis::SetCrosshairBackColor(Color color) {
+  crosshairBackColor_ = color;
+}
+
 void VerticalAxis::OnSetScales(const DataRows &scales) {
   scales_.resize(scales.size());
   strScales_.resize(scales.size());
 
   for (int i = 0; i < (int) scales.size(); i++) {
     scales_[i] = scales[i];
-    strScales_[i] = transformFn_(scales[i]);
+    strScales_[i] = transformFn_(scales[i], precision_, decimals_);
   }
 }
 
@@ -57,7 +65,7 @@ void VerticalAxis::OnPaint(
 
   if (crosshairY_ != -1) {
     DataType val = data.ToData(crosshairY_);
-    crosshairText_ = transformFn_(val);
+    crosshairText_ = transformFn_(val, precision_, decimals_);
 
     draw(crosshairY_, crosshairText_, true);
   }

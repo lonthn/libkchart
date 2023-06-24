@@ -42,7 +42,10 @@ public:
    * @param flag
    */
   void SetBoldCentralAxis(bool flag);
+  void SetDecimals(int decimals);
   void SetLabelVisible(bool flag);
+  void SetLabelBackColor(Color color);
+  void SetScaleLineColor(Color color);
 
   bool AddGraphics(Graphics *graph);
   bool AddGraphics(const std::vector<Graphics *> &graph);
@@ -117,6 +120,7 @@ protected:
   DataType cacheMin_;
   DataType cacheMax_;
   bool validCache_;
+  int decimals_;
 
   Color scaleLineColor_;
   int colorIdx_;

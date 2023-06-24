@@ -17,6 +17,7 @@ set(source
   ./GraphArea.cpp
   ./graph/GdiPlusGC.cpp
   ./VerticalAxis.cpp
+  ./HorizontalAxis.cpp
 )
 
 
@@ -26,7 +27,9 @@ add_library(${PROJECT_NAME}
 link_libraries(gdiplus)
 link_libraries(${PROJECT_NAME})
 
-add_executable(example
+add_executable(example_dk
 		example/DayKLine.cpp
-        #example/Timeshare.cpp)
 		)
+
+add_executable(example_ts
+		example/Timeshare.cpp)

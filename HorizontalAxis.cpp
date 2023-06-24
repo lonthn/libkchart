@@ -7,7 +7,6 @@
 
 namespace kchart {
 
-
 HorizontalAxis::HorizontalAxis(KChartWnd *wnd)
     : master_(wnd)
     , height_(25)
@@ -15,6 +14,14 @@ HorizontalAxis::HorizontalAxis(KChartWnd *wnd)
     , hdKey_(nullptr)
     , crosshairX_(-1)
     , crosshairBackColor_(0xFF3F3F3F) {
+}
+
+void HorizontalAxis::SetScaleColor(Color color) {
+  scaleColor_ = color;
+}
+
+void HorizontalAxis::SetCrosshairBackColor(Color color) {
+  crosshairBackColor_ = color;
 }
 
 void HorizontalAxis::OnFitIdx(

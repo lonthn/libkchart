@@ -18,6 +18,7 @@ namespace kchart {
 
 typedef struct ColumnInfo {
   CStringW name;
+  int precision;
   int index;
 } *ColumnKey;
 
@@ -35,7 +36,7 @@ public:
   DataSet();
 
   /// @brief 添加列, 需提供列名.
-  ColumnKey AddCol(const std::string &name);
+  ColumnKey AddCol(const std::string &name, int precision = 1);
 
   /// @brief 添加一行.
   int AddRow();

@@ -12,7 +12,7 @@ DataSet::DataSet()
     : rowCount(0) {
 }
 
-ColumnKey DataSet::AddCol(const std::string &name) {
+ColumnKey DataSet::AddCol(const std::string &name, int precision) {
   if (name.empty())
     return nullptr;
 
@@ -22,7 +22,7 @@ ColumnKey DataSet::AddCol(const std::string &name) {
 
   USES_CONVERSION;
   CStringW wname = A2W(name.c_str());
-  colKeys.emplace(name, ColumnInfo{wname, ColCount()});
+  colKeys.emplace(name, ColumnInfo{wname, precision, ColCount()});
   cols.emplace_back(rowCount);
 
   return &colKeys[name];

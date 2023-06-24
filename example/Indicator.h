@@ -18,14 +18,15 @@ std::vector<Graphics *> MA(DataSet &data, const std::vector<int> &nums) {
   ColumnKey close = data.FindCol("CLOSE");
 
   auto ma = [&](int n) {
-    ColumnKey ma = data.AddCol("MA" + std::to_string(n));
+    ColumnKey ma = data.AddCol("MA" + std::to_string(n), 100);
 
     DataType closeSum = 0;
     int i = 0;
     int off = n - 1;
     for (; i < off; i++) {
       closeSum += data.Get(close, i);
-      data.Set(ma, i, NAN); // NAN 表示空数据, 不用绘制.
+      // KC_INVALID_DATA 表示空数据, 不用绘制.
+      data.Set(ma, i, KC_INVALID_DATA);
     }
 
     for (; i < row; i++) {
@@ -48,34 +49,34 @@ std::vector<Graphics *> MA(DataSet &data, const std::vector<int> &nums) {
 std::vector<Graphics *> MACD(DataSet &data) {
   ColumnKey close = data.FindCol("CLOSE");
 
-  ColumnKey dif = data.AddCol("DIF");
-  ColumnKey dea = data.AddCol("DEA");
-  ColumnKey macd = data.AddCol("MACD");
+  ColumnKey dif = data.AddCol("DIF", 100);
+  ColumnKey dea = data.AddCol("DEA", 100);
+  ColumnKey macd = data.AddCol("MACD", 100);
 
-  DataType n1 = 12;
-  DataType sc11 = (n1 - 1) / (n1 + 1);
-  DataType sc12 = 2 / (n1 + 1);
-  DataType n2 = 26;
-  DataType sc21 = (n2 - 1) / (n2 + 1);
-  DataType sc22 = (2) / (n2 + 1);
-  DataType n3 = 9;
-  DataType sc31 = (n3 - 1) / (n3 + 1);
-  DataType sc32 = (2) / (n3 + 1);
+  float n1 = 12;
+  float sc11 = float(n1 - 1) / float(n1 + 1);
+  float sc12 = 2 / float(n1 + 1);
+  float n2 = 26;
+  float sc21 = float(n2 - 1) / float(n2 + 1);
+  float sc22 = 2 / float(n2 + 1);
+  float n3 = 9;
+  float sc31 = float(n3 - 1) / float(n3 + 1);
+  float sc32 = 2 / float(n3 + 1);
 
-  DataType preEMA1 = 0, preEMA2 = 0, preDEA = 0;
+  float preEMA1 = 0, preEMA2 = 0, preDEA = 0;
   for (int i = 0; i < data.RowCount(); i++) {
     // EMA(n1) = 前一日EMA(n1)×(n1-1)/(n1+1) + 今日收盘价×2/(n1+1)
-    preEMA1 = preEMA1 * sc11 + data.Get(close, i) * sc12;
+    preEMA1 = preEMA1 * sc11 + float(data.Get(close, i)) * sc12;
     // EMA(n2) = 前一日EMA(n2)×(n2-1)/(n2+1) + 今日收盘价×2/(n2+1)
-    preEMA2 = preEMA2 * sc21 + data.Get(close, i) * sc22;
+    preEMA2 = preEMA2 * sc21 + float(data.Get(close, i)) * sc22;
     // DIF = 今日EMA(n1) － 今日EMA(n2)
-    DataType difv = preEMA1 - preEMA2;
+    float difv = preEMA1 - preEMA2;
     // 今日DEA = 前一日DEA×(n3-1)/(n3+1) + 今日DIF×2/(n3+1)
     preDEA = preDEA * sc31 + difv * sc32;
 
-    data.Set(dif, i, difv);
-    data.Set(dea, i, preDEA);
-    data.Set(macd, i, (difv - preDEA) * 2);
+    data.Set(dif, i, DataType(difv));
+    data.Set(dea, i, DataType(preDEA));
+    data.Set(macd, i, DataType((difv - preDEA) * 2));
   }
 
   std::vector<Graphics *> graphics;

@@ -32,6 +32,8 @@ public:
   void SetScaleCKey(ColumnKey ckey) {
     hdKey_ = ckey;
   }
+  void SetScaleColor(Color color);
+  void SetCrosshairBackColor(Color color);
 
   virtual void OnFitIdx(
       int begin, int end

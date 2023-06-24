@@ -8,35 +8,32 @@
 #include <vector>
 #include <cmath>
 #include <cstdarg>
-#include <atlstr.h>
 
 namespace kchart {
 
-static CStringW DoubleToStr(double val, int digit)
+static CStringW DataToStr(
+    DataType val,
+    int precision,
+    int decimals
+)
 {
-  if (_isnan(val))
-    return {};
-
-  if (digit == 0) {
-    double newValue = round(val);
-    if (abs(val - newValue) < 1) val = newValue;
-  }
+#define FORMAT_OUT(format_str) \
+  str.Format(L##format_str, double(val)/double(precision))
 
   CStringW str;
-  switch (digit) {
-    case 0:  str.Format(L"%d", (int)val); break;
-    case 1:  str.Format(L"%.1f", val); break;
-    case 2:  str.Format(L"%.2f", val); break;
-    case 3:  str.Format(L"%.3f", val); break;
-    case 4:  str.Format(L"%.4f", val); break;
-    case 5:  str.Format(L"%.5f", val); break;
-    case 6:  str.Format(L"%.6f", val); break;
-    case 7:  str.Format(L"%.7f", val); break;
-    case 8:  str.Format(L"%.8f", val); break;
-    case 9:  str.Format(L"%.9f", val); break;
-    default: str.Format(L"%f", val);   break;
+  switch (decimals) {
+    case 0: str.Format(L"%lld", val/precision); break;
+    case 1: FORMAT_OUT("%.01f"); break;
+    case 2: FORMAT_OUT("%.02f"); break;
+    case 3: FORMAT_OUT("%.03f"); break;
+    case 4: FORMAT_OUT("%.04f"); break;
+    case 5: FORMAT_OUT("%.05f"); break;
+    case 6: FORMAT_OUT("%.06f"); break;
+    case 7: FORMAT_OUT("%.07f"); break;
+    case 8: FORMAT_OUT("%.08f"); break;
+    case 9: FORMAT_OUT("%.09f"); break;
+    default: str.Format(L"%lld", val/precision);
   }
-
   return str;
 }
 
@@ -44,7 +41,7 @@ static void StrSplit(
     const char *str,
     const char *delis,
     bool ignore_space,
-    std::vector<CStringA>& out
+    std::vector<std::string>& out
 )
 {
   if (!*str)

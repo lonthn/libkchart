@@ -10,11 +10,15 @@
 
 #include <vector>
 
+// 通常来讲，用于展示的数据不可能达到 int64 的最大值
+// 所以我们用它来表示无意义的数据.
+#define KC_INVALID_DATA INT64_MAX //0x7FFFFFFFFFFFFFFF
+
 namespace kchart {
 
 typedef int  GraphicsId;
 
-typedef float    DataType;
+typedef int64_t  DataType;
 typedef uint32_t Color;
 
 typedef std::vector<DataType>  DataRows;

@@ -98,7 +98,7 @@ void KLineGraph::Paint(GraphContext *gctx, const DrawData &data) {
   // 最高与最低点标注
   auto fn = [=](DataType num, int i) {
     Scalar dis = 10;
-    CStringW str = DoubleToStr(num, Digit);
+    CStringW str = DataToStr(num, cids[Open]->precision, Digit);
     Size size = gctx->MeasureStr(str);
 
     Scalar halfHeight = size.height / 2;
@@ -134,7 +134,7 @@ void PolyLineGraph::Paint(GraphContext *gctx, const DrawData &data) {
   int count = data.Count();
   for (; i < count; i++) {
     DataType val = data.Get(cids[0], i);
-    if (!isnan(val))
+    if (val != KC_INVALID_DATA)
       break;
   }
 
@@ -152,7 +152,7 @@ void PolyLineGraph::Paint(GraphContext *gctx, const DrawData &data) {
 }
 
 void HistogramGraph::Paint(GraphContext *gctx, const DrawData &data) {
-  bool validca = !isnan(centralAxis);
+  bool validca = centralAxis != KC_INVALID_DATA;
   DataType baseLine = validca ? centralAxis : 0;
   Scalar width = FixedWidth != -1
                  ? FixedWidth : data.sWidth - data.sMargin * 2;

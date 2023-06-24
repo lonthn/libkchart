@@ -11,55 +11,86 @@ namespace kchart {
 
 // 使用 sse 加速查找最大最小值
 void sse_min_max(
-    float *p,
+    int64_t *p,
     int count,
-    float *pmin,
-    float *pmax
+    int64_t *pmin,
+    int64_t *pmax
 ) {
-  __m128 ma = _mm_set_ps1(*pmin);
-  __m128 mb = _mm_set_ps1(*pmax);
-  __m128 mc;
+//  __m256i ma = _mm256_set1_epi64x(*pmin);
+//  __m256i mb = _mm256_set1_epi64x(*pmax);
+//  __m256i mc;
+//  int gCount = count / 4;
+//  for (int i = 0; i < gCount; ++i) {
+//    mc = _mm256_load_si256((__m256i*)p);
+//    ma = _mm256_min_epu64(ma, mc);
+//    mb = _mm256_max_epu64(mb, mc);
+//    p += 4;
+//  }
+//  *pmin = min(
+//      min(ma.m256i_i64[0], ma.m256i_i64[1]),
+//      min(ma.m256i_i64[2], ma.m256i_i64[3])
+//  );
+//
+//  *pmax = max(
+//      max(mb.m256i_i64[0], mb.m256i_i64[1]),
+//      max(mb.m256i_i64[2], mb.m256i_i64[3])
+//  );
+//  for (int i = 0; i < count % 4; ++i) {
+//    *pmin = min(*pmin, p[i]);
+//    *pmax = max(*pmax, p[i]);
+//  }
   int gCount = count / 4;
   for (int i = 0; i < gCount; ++i) {
-    mc = _mm_load_ps(p);
-    ma = _mm_min_ps(ma, mc);
-    mb = _mm_max_ps(mb, mc);
+    if (p[0] > *pmax) *pmax = p[0];
+    if (p[1] > *pmax) *pmax = p[1];
+    if (p[2] > *pmax) *pmax = p[2];
+    if (p[3] > *pmax) *pmax = p[3];
+    if (p[0] < *pmin) *pmin = p[0];
+    if (p[1] < *pmin) *pmin = p[1];
+    if (p[2] < *pmin) *pmin = p[2];
+    if (p[3] < *pmin) *pmin = p[3];
     p += 4;
   }
-  *pmin = min(
-      min(ma.m128_f32[0], ma.m128_f32[1]),
-      min(ma.m128_f32[2], ma.m128_f32[3])
-  );
-  *pmax = max(
-      max(mb.m128_f32[0], mb.m128_f32[1]),
-      max(mb.m128_f32[2], mb.m128_f32[3])
-  );
-  for (int i = 0; i < count % 4; ++i) {
-    *pmin = min(*pmin, p[i]);
-    *pmax = max(*pmax, p[i]);
+  for (int i = 0; i < count%4; ++i) {
+    if (p[0] > *pmax) *pmax = p[0];
+    if (p[0] < *pmin) *pmin = p[0];
+    p++;
   }
 }
 
 // 使用 sse 加速查找最大最小值
 void sse_max(
-    float *p,
+    int64_t *p,
     int count,
-    float *pmax
+    int64_t *pmax
 ) {
-  __m128 ma = _mm_set_ps1(*pmax);
-  __m128 mb;
+//  __m256i ma = _mm256_set1_epi64x(*pmax);
+//  __m256i mb;
+//  int gCount = count / 4;
+//  for (int i = 0; i < gCount; ++i) {
+//    mb = _mm256_loadu_si256((__m256i*)p);
+//    ma = _mm256_max_epi64(ma, mb);
+//    p += 4;
+//  }
+//  *pmax = max(
+//      max(ma.m256i_i64[0], ma.m256i_i64[1]),
+//      max(ma.m256i_i64[2], ma.m256i_i64[3])
+//  );
+//  for (int i = 0; i < count % 4; ++i) {
+//    *pmax = max(*pmax, p[i]);
+//  }
+
   int gCount = count / 4;
   for (int i = 0; i < gCount; ++i) {
-    mb = _mm_load_ps(p);
-    ma = _mm_max_ps(ma, mb);
+    if (p[0] > *pmax) *pmax = p[0];
+    if (p[1] > *pmax) *pmax = p[1];
+    if (p[2] > *pmax) *pmax = p[2];
+    if (p[3] > *pmax) *pmax = p[3];
     p += 4;
   }
-  *pmax = max(
-      max(ma.m128_f32[0], ma.m128_f32[1]),
-      max(ma.m128_f32[2], ma.m128_f32[3])
-  );
-  for (int i = 0; i < count % 4; ++i) {
-    *pmax = max(*pmax, p[i]);
+  for (int i = 0; i < count%4; ++i) {
+    if (*p > *pmax) *pmax = *p;
+    p++;
   }
 }
 
@@ -75,11 +106,13 @@ GraphArea::GraphArea(KChartWnd *panel,
     , labelHeight_(20)
     , labelBackColor_(0xFF3F3F3F) //0xFF1C1F26
     , crosshairPoint_({-1, -1})
-    , crosshairIndex_(-1), lAxis_(la)
+    , crosshairIndex_(-1)
+    , lAxis_(la)
     , rAxis_(ra)
     , scaleLineColor_(0xFF353535) // 0xFF303030
     , colorIdx_(0)
-    , centralAxis_(NAN) {
+    , centralAxis_(KC_INVALID_DATA)
+    , decimals_(2) {
   colorList_.emplace_back(0xFF416DF9);
   colorList_.emplace_back(0xFFfff129);
   colorList_.emplace_back(0xFFf59241);
@@ -108,10 +141,23 @@ void GraphArea::SetBoldCentralAxis(bool flag) {
   boldCA_ = flag;
 }
 
+void GraphArea::SetDecimals(int decimals) {
+  decimals_ = decimals;
+  lAxis_->SetDecimals(decimals);
+  rAxis_->SetDecimals(decimals);
+}
+
 void GraphArea::SetLabelVisible(bool flag) {
   labelVisible_ = flag;
 }
 
+void GraphArea::SetLabelBackColor(Color color) {
+  labelBackColor_ = color;
+}
+
+void GraphArea::SetScaleLineColor(Color color) {
+  scaleLineColor_ = color;
+}
 
 bool GraphArea::AddGraphics(Graphics *graph) {
   if (!colorList_.empty()
@@ -123,6 +169,9 @@ bool GraphArea::AddGraphics(Graphics *graph) {
   graph->centralAxis = centralAxis_;
   graphics_.emplace_back(graph);
   UpdateMinMax();
+
+  lAxis_->SetPrecision(graph->cids[0]->precision);
+  rAxis_->SetPrecision(graph->cids[0]->precision);
   return true;
 }
 
@@ -149,7 +198,7 @@ void GraphArea::ReGatherLabel(GraphContext *ctx, DrawData &data) {
   for (const auto &item: graphics_) {
     Color color;
     // 带中轴的图形颜色设置方式或许会不同.
-    if (isnan(item->centralAxis))
+    if (item->centralAxis == KC_INVALID_DATA)
       color = item->GetColor(data, crosshairIndex_);
     else
       color = item->GetColorWithCA(data, crosshairIndex_);
@@ -161,7 +210,7 @@ void GraphArea::ReGatherLabel(GraphContext *ctx, DrawData &data) {
       Label &label = labels_[count++];
 
       DataType val = data.Get(key, crosshairIndex_);
-      CStringW labelVal = DoubleToStr(val, item->Digit);
+      CStringW labelVal = DataToStr(val, key->precision, decimals_);
       label.text.Format(
           L"%s:%s ",
           key->name.GetString(),
@@ -174,8 +223,9 @@ void GraphArea::ReGatherLabel(GraphContext *ctx, DrawData &data) {
 }
 
 void GraphArea::UpdateMinMax() {
-  cacheMin_ = 1e10;
-  cacheMax_ = -1e10;
+  // 不能直接使用 INT64_MAX 因为 INT64_MAX = KC_INVALID_DATA
+  cacheMin_ = INT64_MAX - 1;
+  cacheMax_ = INT64_MIN + 1;
 
   DataSet &data = panel_->DataRef();
 
@@ -184,7 +234,7 @@ void GraphArea::UpdateMinMax() {
   if (count == 0)
     return;
 
-  bool invalidCA = isnan(centralAxis_);
+  bool invalidCA = centralAxis_ == KC_INVALID_DATA;
 
   for (const auto &item: graphics_) {
     if (item->ZeroOrigin && invalidCA) {
@@ -231,43 +281,35 @@ void GraphArea::UpdateScales() {
     scaleNum = 1;
 
   // 刻度之间的间隔
-  float step = float(cacheMax_ - cacheMin_) / float(scaleNum);
-  float exponent = log10(step) - 1;
+  DataType step = (cacheMax_ - cacheMin_) / DataType(scaleNum);
+  double exponent = log10((double)step) - 1;
   int expi = (int) exponent;
   if (exponent < 0 && abs(exponent) > 1e-8)
     expi--;
 
   double s = pow(10, expi);
 
-  int tmp_step = int(step / s);
+  DataType tmp_step = DataType(double(step) / s);
   // 100 75 50 25 10
-  if (tmp_step > 88)
-    tmp_step = 100;
-  else if (tmp_step > 63)
-    tmp_step = 75;
-  else if (tmp_step > 38)
-    tmp_step = 50;
-  else if (tmp_step > 8)
-    tmp_step = 25;
-  else
-    tmp_step = 10;
+  if (tmp_step > 88)      tmp_step = 100;
+  else if (tmp_step > 63) tmp_step = 75;
+  else if (tmp_step > 38) tmp_step = 50;
+  else if (tmp_step > 8)  tmp_step = 25;
+  else tmp_step = 10;
 
-  step = float(tmp_step * s);
+  step = DataType(double(tmp_step) * s);
 
   bool update = false;
   if (step > 0) {
-    float start = 0;
-    if (!isnan(centralAxis_)) {
+    DataType start = 0;
+    if (centralAxis_ != KC_INVALID_DATA) {
       start = centralAxis_;
-      while (start > cacheMin_)
-        start -= step;
+      while ((start - step) > cacheMin_) start -= step;
     }
     if (cacheMin_ >= 0) {
-      while (start < cacheMin_)
-        start += step;
+      while (start < cacheMin_) start += step;
     } else {
-      while ((start - step) > cacheMin_)
-        start -= step;
+      while ((start - step) > cacheMin_) start -= step;
     }
 
     int i = 0;
@@ -282,7 +324,10 @@ void GraphArea::UpdateScales() {
       start += step;
       i++;
     }
-    scales_.resize(i);
+    if ((int) scales_.size() != i) {
+      scales_.resize(i);
+      update = true;
+    }
   }
 
   if (update) {
@@ -322,7 +367,7 @@ void GraphArea::OnPaint(GraphContext *ctx, DrawData &data) {
   Scalar width = bounds_.Width();
   ctx->SetLineWidth(3);
   ctx->SetColor(labelBackColor_);
-  if (!isnan(centralAxis_) && boldCA_) {
+  if (centralAxis_ != KC_INVALID_DATA && boldCA_) {
     Scalar y = data.ToPY(centralAxis_);
     ctx->DrawLine(0, y, width, y);
   }
