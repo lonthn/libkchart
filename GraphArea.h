@@ -55,31 +55,17 @@ protected:
                      VerticalAxis *la,
                      VerticalAxis *ra);
 
-  void SetWeight(float weight) {
-    weight_ = weight;
-  }
-  float GetWeight() const {
-    return weight_;
-  }
-  void SetBounds(const Rect &bounds) {
-    bounds_ = bounds;
-  }
-  Rect GetBounds() const {
-    return bounds_;
-  }
-  Scalar GetLabelHeight() const {
-    return labelVisible_ ? labelHeight_ : 0;
-  }
+  void SetWeight(float weight);
+  float GetWeight() const;
+  void SetBounds(const Rect &bounds);
+  Rect GetBounds() const;
+  Scalar GetLabelHeight() const;
   // 代表当前界面展示的所有数据的 min max
-  DataType GetMin() const {
-    return cacheMin_;
-  }
-  DataType GetMax() const {
-    return cacheMax_;
-  }
-  const DataRows &GetScales() {
-    return scales_;
-  }
+  DataType GetMin() const;
+  DataType GetMax() const;
+  const DataRows &GetScales();
+  Point GetCrosshairPoint() const;
+  int GetCrosshairIndex() const;
 
   Scalar GetContentTop() const;
   Scalar GetContentHeight() const;

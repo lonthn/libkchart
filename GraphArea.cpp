@@ -128,6 +128,41 @@ GraphArea::GraphArea(KChartWnd *panel,
   colorList_.emplace_back(0xFF9A6324);
 }
 
+
+void GraphArea::SetWeight(float weight) {
+  weight_ = weight;
+}
+float GraphArea::GetWeight() const {
+  return weight_;
+}
+void GraphArea::SetBounds(const Rect &bounds) {
+  bounds_ = bounds;
+}
+Rect GraphArea::GetBounds() const {
+  return bounds_;
+}
+Scalar GraphArea::GetLabelHeight() const {
+  return labelVisible_ ? labelHeight_ : 0;
+}
+// 代表当前界面展示的所有数据的 min max
+DataType GraphArea::GetMin() const {
+  return cacheMin_;
+}
+DataType GraphArea::GetMax() const {
+  return cacheMax_;
+}
+const DataRows &GraphArea::GetScales() {
+  return scales_;
+}
+
+Point GraphArea::GetCrosshairPoint() const {
+  return crosshairPoint_;
+}
+
+int GraphArea::GetCrosshairIndex() const {
+  return crosshairIndex_;
+}
+
 DataType GraphArea::GetCentralAxis() {
   return centralAxis_;
 }

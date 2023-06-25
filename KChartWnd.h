@@ -137,11 +137,16 @@ private:
   Point crosshairPoint_;
 
   // 控制能够显示的数据范围, 这个范围是可以超过 DataSet
-  // 中现存的数据.
-  int beginIdx_;
-  int endIdx_;
+  // 中现存的数据, 这种情况大概就是图形区域的右边会出现
+  // 一片空白.
+  int  beginIdx_;
+  int  endIdx_;
   bool fixedCount_;
+  // 单个图形所占宽度, 它通常是单数, 只有在图形被缩放至
+  // 小于3个像素时,才会出现双数, 但在这时应该将其理解为
+  // 图形之间的距离更合适, 而图形的宽度会被置为1
   float sWidth_;
+
   DataSet data_;
 
   WndProcThunk *procThunk_;

@@ -284,13 +284,31 @@ void KChartWnd::Zoom(int factor) {
   if (fixedCount_ || factor == 0)
     return;
 
+  float old = sWidth_;
+
+  const float step[] = {2, 1.5, 1};
+
+  // 这里看起来有点让人抓狂, 但这是有必要的, 为了保证
+  // (像蜡烛图这种中间带有分割线的)图形左右对称, 以及缩放
+  // 更流畅.
   if (sWidth_ < 1 || (sWidth_ == 1 && factor < 0)) {
-    sWidth_ += float(factor) * 0.2f;
+    sWidth_ += float(factor) * 0.1f;
+  } else if (sWidth_ < 2 || (sWidth_ == 2 && factor < 0)) {
+    sWidth_ += float(factor) * 0.5f;
   } else {
-    sWidth_ += float(factor * 2);
+    if (sWidth_ < 3 || (sWidth_ == 3 && factor < 0)) {
+      sWidth_ += float(factor);
+    } else {
+      sWidth_ += float(factor * 2);
+    }
   }
   if (sWidth_ <= 0)
-    sWidth_ = 0.2f;
+    sWidth_ = 0.1f;
+
+  // 由于浮点数存在精度问题, 所以只能通过这种方式判断相等.
+  if (abs(old - sWidth_) < 1e-4) {
+    return;
+  }
 
   FitNewWidth();
 
@@ -299,23 +317,50 @@ void KChartWnd::Zoom(int factor) {
 }
 
 void KChartWnd::MoveCrosshair(int offset) {
-//  if (areas_.empty())
-//    return;
-//
-//  int showCount = min(endIdx_ - beginIdx_, data_.RowCount());
-//  if (showCount <= 0)
-//    return;
-//
-//  DrawData data(data_, beginIdx_, showCount);
-//  FillDrawData(areas_.front(), data);
-//  if (crosshairPoint_.x == -1) {
-//    data.ToIdx()
-//  }
+  if (areas_.empty())
+    return;
+
+  GraphArea *area = areas_.front();
+
+  int showCount = min(endIdx_ - beginIdx_, data_.RowCount());
+  if (showCount <= 0)
+    return;
+
+  DrawData data(data_, beginIdx_, showCount);
+  FillDrawData(area, data);
+
+  int idx;
+  Scalar x;
+  Point chp = area->GetCrosshairPoint();
+  if (chp.x == -1) {
+    idx = offset > 0 ? (data.Count() - 1) : 0;
+    x = area->GetBounds().left + data.ToPX(idx);
+  } else {
+    idx = data.ToIdx(chp.x) + offset;
+    if (idx < 0 || idx >= data.Count()) {
+      if (offset < 0 && (beginIdx_+offset) < 0)          return;
+      if (offset > 0 && (endIdx_+offset) > data_.RowCount()) return;
+      idx = offset > 0 ? (data.Count() - 1) : 0;
+      beginIdx_ += offset;
+      endIdx_ += offset;
+
+      for (auto *item: areas_) {
+        item->OnFitIdx(beginIdx_, endIdx_);
+        item->UpdateScales();
+      }
+    }
+    x = area->GetBounds().left + data.ToPX(idx);
+  }
+
+  crosshairVisible_ = true;
+  OnSetCrosshairPoint({x, crosshairPoint_.y});
 }
 
 void KChartWnd::FastScroll(int dir) {
   if (areas_.empty())
     return;
+
+  crosshairVisible_ = false;
 
   // 是否到边界了?
   if ((dir < 0 && beginIdx_ == 0)
@@ -598,7 +643,7 @@ void KChartWnd::FitNewWidth() {
       beginIdx_ = 0;
       endIdx_ = newCount;
     } else {
-      if (endIdx_ == 0) {
+      if (endIdx_ == 0 || endIdx_ > data_.RowCount()) {
         if (data_.RowCount() > newCount)
           endIdx_ = data_.RowCount();
         else
