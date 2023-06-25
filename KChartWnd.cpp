@@ -169,7 +169,7 @@ void KChartWnd::ChangeTheme(bool white) {
   if (white) {
     backColor_   = 0xFFD4D4D4;
     borderColor_ = 0xFFC0C0C0;
-    crosshairColor_ = 0xFF101010;
+    crosshairColor_ = 0xFF505050;
 
     for (int i = 0; i < (int) areas_.size(); ++i) {
       GraphArea *area = areas_[i];
@@ -192,7 +192,7 @@ void KChartWnd::ChangeTheme(bool white) {
   } else {
     backColor_   = 0xFF2B2B2B;
     borderColor_ = 0xFF3F3F3F;
-    crosshairColor_ = 0xFFFFFFFF;
+    crosshairColor_ = 0xFFAFAFAF;
 
     for (int i = 0; i < (int) areas_.size(); ++i) {
       GraphArea *area = areas_[i];
@@ -296,6 +296,53 @@ void KChartWnd::Zoom(int factor) {
 
   for (auto area: areas_)
     area->UpdateScales();
+}
+
+void KChartWnd::MoveCrosshair(int offset) {
+//  if (areas_.empty())
+//    return;
+//
+//  int showCount = min(endIdx_ - beginIdx_, data_.RowCount());
+//  if (showCount <= 0)
+//    return;
+//
+//  DrawData data(data_, beginIdx_, showCount);
+//  FillDrawData(areas_.front(), data);
+//  if (crosshairPoint_.x == -1) {
+//    data.ToIdx()
+//  }
+}
+
+void KChartWnd::FastScroll(int dir) {
+  if (areas_.empty())
+    return;
+
+  // 是否到边界了?
+  if ((dir < 0 && beginIdx_ == 0)
+   || (dir > 0 && endIdx_ >= data_.RowCount())) {
+    return;
+  }
+
+  int showCount = endIdx_ - beginIdx_;
+  float off = float(dir) * float(showCount) * 0.1f;
+  if ((dir > 0 && off < 1) || (dir < 0 && off > -1))
+    off = (float) dir;
+  beginIdx_ += (int) off;
+  endIdx_ += (int) off;
+  if (beginIdx_ < 0) {
+    beginIdx_ = 0;
+    endIdx_ = showCount;
+  } else if (endIdx_ > data_.RowCount()) {
+    beginIdx_ = data_.RowCount() - showCount;
+    endIdx_ = data_.RowCount();
+  }
+
+  for (GraphArea *area: areas_) {
+    area->OnFitIdx(beginIdx_, endIdx_);
+    area->UpdateScales();
+  }
+
+  hAxis_->OnFitIdx(beginIdx_, endIdx_);
 }
 
 void KChartWnd::OnSetCrosshairPoint(Point point) {
@@ -548,13 +595,21 @@ void KChartWnd::FitNewWidth() {
   int newCount = int(float(width) / sWidth_);
   if (newCount > 0) {
     if (newCount > data_.RowCount()) {
-      endIdx_ = newCount;
       beginIdx_ = 0;
+      endIdx_ = newCount;
     } else {
-      if (endIdx_ > data_.RowCount() || endIdx_ == 0)
-        endIdx_ = data_.RowCount();
+      if (endIdx_ == 0) {
+        if (data_.RowCount() > newCount)
+          endIdx_ = data_.RowCount();
+        else
+          endIdx_ = newCount;
+      }
 
       beginIdx_ = endIdx_ - newCount;
+      if (beginIdx_ < 0) {
+        beginIdx_ = 0;
+        endIdx_ = newCount;
+      }
     }
   }
 

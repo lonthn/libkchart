@@ -12,7 +12,7 @@
 #define CKEY_OPEN   "OPEN"
 #define CKEY_CLOSE  "CLOSE"
 #define CKEY_AVG    "AVG-PRICE"
-#define CKEY_ORDERR "ORD-RATE"
+#define CKEY_ORDERR "ORD-RATIO"
 #define CKEY_VOLUME "VOLUME"
 #define CKEY_TIME   "TIME"
 
@@ -54,8 +54,8 @@ int WINAPI WinMain(
 
   // 在主图区域添加最新价以及均价线.
   mainArea->AddGraphics(new HistogramGraph(data.FindCol(CKEY_ORDERR), 1));
-  mainArea->AddGraphics(new PolyLineGraph(data.FindCol(CKEY_CLOSE), 2));
-  mainArea->AddGraphics(new PolyLineGraph(data.FindCol(CKEY_AVG), 2));
+  mainArea->AddGraphics(new PolyLineGraph(data.FindCol(CKEY_CLOSE)));
+  mainArea->AddGraphics(new PolyLineGraph(data.FindCol(CKEY_AVG)));
   // 副图成交量.
   indiArea->AddGraphics(new VolumeGraph(data));
   //indiArea->SetLabelVisible(false);
@@ -66,14 +66,14 @@ int WINAPI WinMain(
 }
 
 void LoadTimeshareData(const char *file, DataSet &data) {
-  // 注意! 文件中的数据并不是真实市场行情数据, 不具备任何参考意义.
+  // 注意! 并非真实市场行情数据, 不具备任何参考意义.
   std::ifstream ifs(file, std::ios::binary);
   assert(ifs.is_open());
 
-  ColumnKey close = data.AddCol(CKEY_CLOSE);
+  ColumnKey close = data.AddCol(CKEY_CLOSE, 100);
   ColumnKey vol = data.AddCol(CKEY_VOLUME);
-  ColumnKey avg = data.AddCol(CKEY_AVG);
-  ColumnKey open = data.AddCol(CKEY_OPEN);
+  ColumnKey avg = data.AddCol(CKEY_AVG, 100);
+  ColumnKey open = data.AddCol(CKEY_OPEN, 100);
   ColumnKey ord = data.AddCol(CKEY_ORDERR);
   ColumnKey time = data.AddCol(CKEY_TIME);
 
@@ -82,6 +82,9 @@ void LoadTimeshareData(const char *file, DataSet &data) {
 
   // Skip the header.
   ifs.getline(buf, bufSize - 1, '\n');
+
+  DataType minv = INT64_MAX - 1;
+  DataType maxv = INT64_MIN + 1;
 
   char *endptr = nullptr;
   DataType preVol = 0;
@@ -94,11 +97,11 @@ void LoadTimeshareData(const char *file, DataSet &data) {
     StrSplit(line.c_str(), ",", true, fields);
 
     int idx = data.AddRow();
-    DataType volume = std::strtof(fields[2].c_str(), &endptr);
-    data.Set(time, idx, (DataType) std::strtod(fields[0].c_str(), &endptr));
-    data.Set(close, idx, std::strtof(fields[1].c_str(), &endptr) / 3);
-    data.Set(vol, idx, volume - preVol);
-    data.Set(avg, idx, std::strtof(fields[3].c_str(), &endptr) / 3);
+    DataType volume = std::strtoll(fields[2].c_str(), &endptr, 10);
+    data.Set(time,  idx, std::strtoll(fields[0].c_str(), &endptr, 10));
+    data.Set(close, idx, std::strtoll(fields[1].c_str(), &endptr, 10));
+    data.Set(vol,   idx, volume - preVol);
+    data.Set(avg,   idx, std::strtoll(fields[3].c_str(), &endptr, 10));
     // 开盘价不做展示，仅仅只是为了确定成交量柱图的颜色.
     if (rand() % 2 == 1) {
       data.Set(open, idx, data.Get(close, idx) + 1);
@@ -106,20 +109,20 @@ void LoadTimeshareData(const char *file, DataSet &data) {
       data.Set(open, idx, data.Get(close, idx) - 1);
     }
     preVol = volume;
+
+    minv = min(minv, data.Get(close, idx));
+    maxv = max(maxv, data.Get(close, idx));
   }
 
   // 随机生成每分钟的买卖盘比.
-  DataType min = 106920.34 - 250.0;
-  DataType max = 107670.34;
-  DataType x = max - min;
+  DataType x = maxv - minv;
   for (int i = 0; i < data.RowCount(); ++i) {
-    int sign = rand() % 2;
-
-    int in  = rand() % 100;
-    DataType rate = DataType(in) / 100 * 0.2;
+    int   sign = rand() % 2;
+    int   percent = rand() % 100;
+    float rate = (float)percent / 100 * 0.2f;
     if (sign == 0)
       rate *= -1;
-    data.Set(ord, i, max + x * rate);
+    data.Set(ord, i, data.Get(close, 0) + DataType((float)x * rate));
   }
 }
 

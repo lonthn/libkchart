@@ -85,6 +85,9 @@ public:
   /// @brief 对图形进行缩放.
   /// factor 正数放大, 负数缩小.
   virtual void Zoom(int factor);
+  /// @brief 横向左右移动十字线.
+  virtual void MoveCrosshair(int offset);
+  virtual void FastScroll(int dir);
 
 public:
   static std::string ClassName() {

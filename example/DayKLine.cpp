@@ -121,6 +121,12 @@ void MessageLoop() {
       } else if (msg.wParam == VK_F2) {
         wnd->ChangeTheme(false);
         wnd->Invalidate();
+      } else if (msg.wParam == VK_LEFT) {
+        wnd->FastScroll(-1);
+        wnd->Invalidate();
+      } else if (msg.wParam == VK_RIGHT) {
+        wnd->FastScroll(1);
+        wnd->Invalidate();
       }
     }
   }

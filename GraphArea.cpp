@@ -41,19 +41,21 @@ void sse_min_max(
 //  }
   int gCount = count / 4;
   for (int i = 0; i < gCount; ++i) {
-    if (p[0] > *pmax) *pmax = p[0];
-    if (p[1] > *pmax) *pmax = p[1];
-    if (p[2] > *pmax) *pmax = p[2];
-    if (p[3] > *pmax) *pmax = p[3];
-    if (p[0] < *pmin) *pmin = p[0];
-    if (p[1] < *pmin) *pmin = p[1];
-    if (p[2] < *pmin) *pmin = p[2];
-    if (p[3] < *pmin) *pmin = p[3];
+    if (p[0] != KC_INVALID_DATA && p[0] > *pmax) *pmax = p[0];
+    if (p[1] != KC_INVALID_DATA && p[1] > *pmax) *pmax = p[1];
+    if (p[2] != KC_INVALID_DATA && p[2] > *pmax) *pmax = p[2];
+    if (p[3] != KC_INVALID_DATA && p[3] > *pmax) *pmax = p[3];
+    if (p[0] != KC_INVALID_DATA && p[0] < *pmin) *pmin = p[0];
+    if (p[1] != KC_INVALID_DATA && p[1] < *pmin) *pmin = p[1];
+    if (p[2] != KC_INVALID_DATA && p[2] < *pmin) *pmin = p[2];
+    if (p[3] != KC_INVALID_DATA && p[3] < *pmin) *pmin = p[3];
     p += 4;
   }
   for (int i = 0; i < count%4; ++i) {
-    if (p[0] > *pmax) *pmax = p[0];
-    if (p[0] < *pmin) *pmin = p[0];
+    if (p[3] != KC_INVALID_DATA) {
+      if (p[0] > *pmax) *pmax = p[0];
+      if (p[0] < *pmin) *pmin = p[0];
+    }
     p++;
   }
 }
@@ -82,14 +84,14 @@ void sse_max(
 
   int gCount = count / 4;
   for (int i = 0; i < gCount; ++i) {
-    if (p[0] > *pmax) *pmax = p[0];
-    if (p[1] > *pmax) *pmax = p[1];
-    if (p[2] > *pmax) *pmax = p[2];
-    if (p[3] > *pmax) *pmax = p[3];
+    if (p[0] != KC_INVALID_DATA && p[0] > *pmax) *pmax = p[0];
+    if (p[1] != KC_INVALID_DATA && p[1] > *pmax) *pmax = p[1];
+    if (p[2] != KC_INVALID_DATA && p[2] > *pmax) *pmax = p[2];
+    if (p[3] != KC_INVALID_DATA && p[3] > *pmax) *pmax = p[3];
     p += 4;
   }
   for (int i = 0; i < count%4; ++i) {
-    if (*p > *pmax) *pmax = *p;
+    if (*p != KC_INVALID_DATA && *p > *pmax) *pmax = *p;
     p++;
   }
 }
