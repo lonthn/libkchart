@@ -167,14 +167,14 @@ void KChartWnd::Invalidate() {
 
 void KChartWnd::ChangeTheme(bool white) {
   if (white) {
-    backColor_   = 0xFFD4D4D4;
-    borderColor_ = 0xFFC0C0C0;
+    backColor_   = 0xFFFFFFFF; //0xFFD4D4D4
+    borderColor_ = 0xFFE0E0E0;
     crosshairColor_ = 0xFF505050;
 
     for (int i = 0; i < (int) areas_.size(); ++i) {
       GraphArea *area = areas_[i];
-      area->SetLabelBackColor(0xFFC0C0C0);
-      area->SetScaleLineColor(0xFFCACACA);
+      area->SetLabelBackColor(0xFFE0E0E0);
+      area->SetScaleLineColor(0xFFEAEAEA);
 
       for (Graphics *g : area->graphics_) {
         g->ChangeTheme(white);
@@ -183,12 +183,12 @@ void KChartWnd::ChangeTheme(bool white) {
       VerticalAxis *lvAxis = lvAxis_[i];
       VerticalAxis *rvAxis = rvAxis_[i];
       lvAxis->SetScaleColor(0xFF707070);
-      lvAxis->SetCrosshairBackColor(0xFFC0C0C0);
+      lvAxis->SetCrosshairBackColor(0xFFE0E0E0);
       rvAxis->SetScaleColor(0xFF707070);
-      rvAxis->SetCrosshairBackColor(0xFFC0C0C0);
+      rvAxis->SetCrosshairBackColor(0xFFE0E0E0);
     }
     hAxis_->SetScaleColor(0xFF707070);
-    hAxis_->SetCrosshairBackColor(0xFFC0C0C0);
+    hAxis_->SetCrosshairBackColor(0xFFE0E0E0);
   } else {
     backColor_   = 0xFF2B2B2B;
     borderColor_ = 0xFF3F3F3F;

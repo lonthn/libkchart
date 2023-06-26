@@ -102,6 +102,39 @@ void LoadKLineData(const char *file, DataSet &data) {
   }
 }
 
+void OnKeyDown(WPARAM wParam) {
+  if (GetKeyState(VK_SHIFT) < 0) {
+    if (wParam == VK_LEFT) {
+      wnd->FastScroll(-1);
+      wnd->Invalidate();
+    } else if (wParam == VK_RIGHT) {
+      wnd->FastScroll(1);
+      wnd->Invalidate();
+    }
+    return;
+  }
+
+  if (wParam == VK_UP) {
+    wnd->Zoom(1);
+    wnd->Invalidate();
+  } else if (wParam == VK_DOWN) {
+    wnd->Zoom(-1);
+    wnd->Invalidate();
+  } else if (wParam == VK_F1) {
+    wnd->ChangeTheme(true);
+    wnd->Invalidate();
+  } else if (wParam == VK_F2) {
+    wnd->ChangeTheme(false);
+    wnd->Invalidate();
+  } else if (wParam == VK_LEFT) {
+    wnd->MoveCrosshair(-1);
+    wnd->Invalidate();
+  } else if (wParam == VK_RIGHT) {
+    wnd->MoveCrosshair(1);
+    wnd->Invalidate();
+  }
+}
+
 void MessageLoop() {
   MSG msg;
   while (wnd->Handle() && ::GetMessageA(&msg, NULL, 0, 0)) {
@@ -109,35 +142,7 @@ void MessageLoop() {
     ::DispatchMessage(&msg);
 
     if (msg.message == WM_KEYDOWN) {
-      if (GetKeyState(VK_SHIFT)) {
-        if (msg.wParam == VK_LEFT) {
-          wnd->FastScroll(-1);
-          wnd->Invalidate();
-        } else if (msg.wParam == VK_RIGHT) {
-          wnd->FastScroll(1);
-          wnd->Invalidate();
-        }
-        continue;
-      }
-      if (msg.wParam == VK_UP) {
-        wnd->Zoom(1);
-        wnd->Invalidate();
-      } else if (msg.wParam == VK_DOWN) {
-        wnd->Zoom(-1);
-        wnd->Invalidate();
-      } else if (msg.wParam == VK_F1) {
-        wnd->ChangeTheme(true);
-        wnd->Invalidate();
-      } else if (msg.wParam == VK_F2) {
-        wnd->ChangeTheme(false);
-        wnd->Invalidate();
-      } else if (msg.wParam == VK_LEFT) {
-        wnd->MoveCrosshair(-1);
-        wnd->Invalidate();
-      } else if (msg.wParam == VK_RIGHT) {
-        wnd->MoveCrosshair(1);
-        wnd->Invalidate();
-      }
+      OnKeyDown(msg.wParam);
     }
   }
 }

@@ -189,11 +189,11 @@ void GdiPlusGC::EndPolyLine() {
     return;
 
   auto smode = gdiGraph_->GetSmoothingMode();
-  //gdiGraph_->SetSmoothingMode(Gdiplus::SmoothingModeAntiAlias);
+  gdiGraph_->SetSmoothingMode(Gdiplus::SmoothingModeAntiAlias);
   gdiGraph_->DrawLines(gdiPen_,
                        pointCache_.data(),
                        pointNum_);
-  //gdiGraph_->SetSmoothingMode(smode);
+  gdiGraph_->SetSmoothingMode(smode);
   pointNum_ = 0;
 }
 
