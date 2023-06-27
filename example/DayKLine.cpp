@@ -49,7 +49,7 @@ int WINAPI WinMain(
   ind2Area->AddGraphics(MACD(data));
 
   // MACD 指标图需要中心轴.
-  ind2Area->SetCentralAxis(0.0f);
+  ind2Area->SetCentralAxis(0);
 
   wnd->Show(TRUE);
   MessageLoop();

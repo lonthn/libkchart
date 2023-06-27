@@ -117,7 +117,7 @@ void GdiPlusGC::SetColor(Color color) {
 }
 
 void GdiPlusGC::SetLineWidth(int width) {
-  gdiPen_->SetWidth(width);
+  gdiPen_->SetWidth((Gdiplus::REAL)width);
 }
 
 void GdiPlusGC::DrawRect(const Rect &r) {
