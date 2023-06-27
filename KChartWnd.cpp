@@ -186,9 +186,11 @@ void KChartWnd::ChangeTheme(bool white) {
       lvAxis->SetCrosshairBackColor(0xFFE0E0E0);
       rvAxis->SetScaleColor(0xFF707070);
       rvAxis->SetCrosshairBackColor(0xFFE0E0E0);
+      area->SetForceChange();
     }
     hAxis_->SetScaleColor(0xFF707070);
     hAxis_->SetCrosshairBackColor(0xFFE0E0E0);
+    hAxis_->SetForceChange();
   } else {
     backColor_   = 0xFF2B2B2B;
     borderColor_ = 0xFF3F3F3F;
@@ -209,9 +211,11 @@ void KChartWnd::ChangeTheme(bool white) {
       lvAxis->SetCrosshairBackColor(0xFF3F3F3F);
       rvAxis->SetScaleColor(0xFF8F8F8F);
       rvAxis->SetCrosshairBackColor(0xFF3F3F3F);
+      area->SetForceChange();
     }
     hAxis_->SetScaleColor(0xFF8F8F8F);
     hAxis_->SetCrosshairBackColor(0xFF3F3F3F);
+    hAxis_->SetForceChange();
   }
 }
 
@@ -330,30 +334,36 @@ void KChartWnd::MoveCrosshair(int offset) {
   FillDrawData(area, data);
 
   int idx;
-  Scalar x;
-  Point chp = area->GetCrosshairPoint();
-  if (chp.x == -1) {
+  int cidx = area->GetCrosshairIndex();
+  /*if (cidx) {
     idx = offset > 0 ? (data.Count() - 1) : 0;
     x = area->GetBounds().left + data.ToPX(idx);
-  } else {
-    idx = data.ToIdx(chp.x) + offset;
-    if (idx < 0 || idx >= data.Count()) {
-      if (offset < 0 && (beginIdx_+offset) < 0)          return;
-      if (offset > 0 && (endIdx_+offset) > data_.RowCount()) return;
-      idx = offset > 0 ? (data.Count() - 1) : 0;
-      beginIdx_ += offset;
-      endIdx_ += offset;
+  } else {*/
+  idx = cidx + offset;
+  if (idx < 0 || idx >= data.Count()) {
+  	if (offset < 0 && (beginIdx_+offset) < 0)          return;
+  	if (offset > 0 && (endIdx_+offset) > data_.RowCount()) return;
+  	idx = offset > 0 ? (data.Count() - 1) : 0;
+  	beginIdx_ += offset;
+  	endIdx_ += offset;
 
-      for (auto *item: areas_) {
-        item->OnFitIdx(beginIdx_, endIdx_);
-        item->UpdateScales();
-      }
-    }
-    x = area->GetBounds().left + data.ToPX(idx);
+  	for (auto *item: areas_) {
+  	  item->OnFitIdx(beginIdx_, endIdx_);
+  	  item->UpdateScales();
+      item->SetForceChange();
+  	}
+	  hAxis_->OnFitIdx(beginIdx_, endIdx_);
+    hAxis_->SetForceChange();
+    return;
   }
+  //}
 
   crosshairVisible_ = true;
-  OnSetCrosshairPoint({x, crosshairPoint_.y});
+  for (auto *item : areas_) {
+    item->OnMoveCrosshair(idx);
+  }
+  hAxis_->OnMoveCrosshair(idx);
+  // OnSetCrosshairPoint({x, crosshairPoint_.y});
 }
 
 void KChartWnd::FastScroll(int dir) {
@@ -385,9 +395,11 @@ void KChartWnd::FastScroll(int dir) {
   for (GraphArea *area: areas_) {
     area->OnFitIdx(beginIdx_, endIdx_);
     area->UpdateScales();
+    area->SetForceChange();
   }
 
   hAxis_->OnFitIdx(beginIdx_, endIdx_);
+  hAxis_->SetForceChange();
 }
 
 void KChartWnd::OnSetCrosshairPoint(Point point) {
@@ -411,7 +423,8 @@ void KChartWnd::OnSetCrosshairPoint(Point point) {
       y = -1;
 
     item->OnMoveCrosshair({x, y});
-
+    lvAxis_[i]->OnMoveCrosshair({x, y});
+    rvAxis_[i]->OnMoveCrosshair({x, y});
     if (i == count - 1) {
       hAxis_->OnMoveCrosshair({x, -1});
     }

@@ -9,6 +9,7 @@
 #include "Struct.h"
 #include "graph/GraphContext.h"
 #include "Graphics.h"
+#include "CrosshairDelegate.h"
 
 #include <atlstr.h>
 
@@ -20,7 +21,7 @@ class VerticalAxis;
 /**
  * 图形区域，以上下布局的方式展示在 KCharWnd 中.
  */
-class GraphArea {
+class GraphArea : public CrosshairDelegate {
 public:
   virtual ~GraphArea();
 
@@ -64,8 +65,6 @@ protected:
   DataType GetMin() const;
   DataType GetMax() const;
   const DataRows &GetScales();
-  Point GetCrosshairPoint() const;
-  int GetCrosshairIndex() const;
 
   Scalar GetContentTop() const;
   Scalar GetContentHeight() const;
@@ -74,8 +73,9 @@ protected:
   virtual void UpdateMinMax();
   virtual void UpdateScales();
 
+  void OnCrosshairIdxChanged(GraphContext *ctx, DrawData& data) override;
+
   virtual void OnFitIdx(int begin, int end);
-  virtual void OnMoveCrosshair(Point point);
   virtual void OnPaint(GraphContext *ctx, DrawData &data);
   virtual void OnPaintLabel(GraphContext *ctx, DrawData &data);
   virtual void OnPaintGraph(GraphContext *ctx, DrawData &data);
@@ -87,8 +87,7 @@ protected:
 
   Rect bounds_;
   Rect graphArea_;
-  Point crosshairPoint_;
-  int crosshairIndex_;
+
   Scalar labelHeight_;
   bool labelVisible_;
   Color labelBackColor_;

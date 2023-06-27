@@ -107,14 +107,14 @@ GraphArea::GraphArea(KChartWnd *panel,
     , labelVisible_(true)
     , labelHeight_(20)
     , labelBackColor_(0xFF3F3F3F) //0xFF1C1F26
-    , crosshairPoint_({-1, -1})
-    , crosshairIndex_(-1)
     , lAxis_(la)
     , rAxis_(ra)
     , scaleLineColor_(0xFF353535) // 0xFF303030
     , colorIdx_(0)
     , centralAxis_(KC_INVALID_DATA)
-    , decimals_(2) {
+    , decimals_(2)
+    , begin_(0)
+    , end_(0) {
   colorList_.emplace_back(0xFF416DF9);
   colorList_.emplace_back(0xFFfff129);
   colorList_.emplace_back(0xFFf59241);
@@ -153,14 +153,6 @@ DataType GraphArea::GetMax() const {
 }
 const DataRows &GraphArea::GetScales() {
   return scales_;
-}
-
-Point GraphArea::GetCrosshairPoint() const {
-  return crosshairPoint_;
-}
-
-int GraphArea::GetCrosshairIndex() const {
-  return crosshairIndex_;
 }
 
 DataType GraphArea::GetCentralAxis() {
@@ -231,14 +223,19 @@ Scalar GraphArea::GetContentHeight() const {
 }
 
 void GraphArea::ReGatherLabel(GraphContext *ctx, DrawData &data) {
+  int idx = crosshairIndex_;
+  if (idx == -1) {
+    idx = data.Count() - 1;
+  }
+
   int count = 0;
   for (const auto &item: graphics_) {
     Color color;
     // 带中轴的图形颜色设置方式或许会不同.
     if (item->centralAxis == KC_INVALID_DATA)
-      color = item->GetColor(data, crosshairIndex_);
+      color = item->GetColor(data, idx);
     else
-      color = item->GetColorWithCA(data, crosshairIndex_);
+      color = item->GetColorWithCA(data, idx);
 
     for (ColumnKey key: item->cids) {
       if (count == labels_.size())
@@ -246,7 +243,7 @@ void GraphArea::ReGatherLabel(GraphContext *ctx, DrawData &data) {
 
       Label &label = labels_[count++];
 
-      DataType val = data.Get(key, crosshairIndex_);
+      DataType val = data.Get(key, idx);
       CStringW labelVal = DataToStr(val, key->precision, decimals_);
       label.text.Format(
           L"%s:%s ",
@@ -373,7 +370,15 @@ void GraphArea::UpdateScales() {
   }
 }
 
+void GraphArea::OnCrosshairIdxChanged(GraphContext *ctx, DrawData& data) {
+  if (labelVisible_) {
+    ReGatherLabel(ctx, data);
+  }
+}
+
 void GraphArea::OnFitIdx(int begin, int end) {
+  // int off = begin - being_;
+
   begin_ = begin;
   end_ = end;
 
@@ -382,15 +387,11 @@ void GraphArea::OnFitIdx(int begin, int end) {
   UpdateMinMax();
 }
 
-void GraphArea::OnMoveCrosshair(Point point) {
-  crosshairPoint_ = point;
-  lAxis_->OnMoveCrosshair(point);
-  rAxis_->OnMoveCrosshair(point);
-}
-
 void GraphArea::OnPaint(GraphContext *ctx, DrawData &data) {
   if (graphics_.empty())
     return;
+
+  OnPrePaint(ctx, data);
 
   Scalar offY = 0;
   if (labelVisible_) {
@@ -430,12 +431,19 @@ void GraphArea::OnPaintLabel(GraphContext *ctx, DrawData &data) {
 
   Scalar width = bounds_.Width();
 
-  if (crosshairPoint_.x != -1)
-    index = data.ToIdx(crosshairPoint_.x);
-
-  if (crosshairIndex_ != index) {
-    crosshairIndex_ = index;
-    ReGatherLabel(ctx, data);
+  if (mstrCrosshairIdx_ < 0) {
+    if (crosshairPoint_.x != -1)
+      index = data.ToIdx(crosshairPoint_.x);
+    if (crosshairIndex_ != index) {
+      crosshairIndex_ = index;
+      ReGatherLabel(ctx, data);
+    }
+  } else {
+     if (mstrCrosshairIdx_ != crosshairIndex_) {
+       crosshairIndex_ = mstrCrosshairIdx_;
+       crosshairPoint_.x = data.ToPX(crosshairIndex_);
+       ReGatherLabel(ctx, data);
+     }
   }
 
   ctx->SetColor(labelBackColor_);

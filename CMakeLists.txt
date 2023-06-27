@@ -18,13 +18,13 @@ set(source
   ./graph/GdiPlusGC.cpp
   ./VerticalAxis.cpp
   ./HorizontalAxis.cpp
+  ./CrosshairDelegate.cpp
 )
 
 
 add_library(${PROJECT_NAME}
 		${source})
 
-link_libraries(gdiplus)
 link_libraries(${PROJECT_NAME})
 
 add_executable(example_dk

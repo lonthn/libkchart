@@ -60,12 +60,8 @@ public:
 /// K线图，需要提供开高低收4列数据
 /// 列名分别是: OPEN, HIGH, LOW, CLOSE
 class KLineGraph : public Graphics {
-  enum Cid {
-    Open = 0,
-    High,
-    Low,
-    Close,
-  };
+
+  enum Cid { Open = 0, High, Low, Close, };
 
 public:
   Color UpColor;

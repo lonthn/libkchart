@@ -6,6 +6,8 @@
 
 #include <gdiplus.h>
 
+#pragma comment(lib, "gdiplus.lib")
+
 namespace kchart {
 
 ULONG_PTR GdiPlusToken = 0;

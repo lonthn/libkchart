@@ -128,7 +128,7 @@ public:
     int index;
     int last = count - 1;
     if (sWidth == 1) {
-      index = int(float(px) / wRatio);
+      index = int(floor(float(px) / wRatio));
     } else {
       // 一般来说, else 的方案就能得到索引, 但要考虑当图形未
       // 充满界面时是从左边开始绘图的.

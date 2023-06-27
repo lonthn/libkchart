@@ -7,7 +7,7 @@
 
 #include "Def.h"
 #include "Struct.h"
-#include "Date.h"
+#include "CrosshairDelegate.h"
 #include "graph/Scalar.h"
 #include "graph/GraphContext.h"
 
@@ -18,7 +18,7 @@ namespace kchart {
 class KChartWnd;
 
 /// 我是一个横向刻度轴
-class HorizontalAxis {
+class HorizontalAxis : public CrosshairDelegate {
 public:
   explicit HorizontalAxis(KChartWnd *wnd);
 
@@ -35,10 +35,11 @@ public:
   void SetScaleColor(Color color);
   void SetCrosshairBackColor(Color color);
 
+  void OnCrosshairIdxChanged(GraphContext *ctx, DrawData& data) override;
+
   virtual void OnFitIdx(
       int begin, int end
   );
-  virtual void OnMoveCrosshair(Point point);
   virtual void OnPaint(
       GraphContext *ctx,
       DrawData &data,

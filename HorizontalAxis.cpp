@@ -24,6 +24,15 @@ void HorizontalAxis::SetCrosshairBackColor(Color color) {
   crosshairBackColor_ = color;
 }
 
+void HorizontalAxis::OnCrosshairIdxChanged(GraphContext *ctx, DrawData& data) {
+  if (crosshairIndex_ != -1) {
+    int val = crosshairIndex_;
+    if (hdKey_)
+      val = (int) data.Get(hdKey_, val);
+    crosshairText_.Format(L"%d", val);
+  }
+}
+
 void HorizontalAxis::OnFitIdx(
     int begin, int end
 ) {
@@ -53,15 +62,13 @@ void HorizontalAxis::OnFitIdx(
   strScales_.push_back(b);
 }
 
-void HorizontalAxis::OnMoveCrosshair(Point point) {
-  crosshairX_ = point.x;
-}
-
 void HorizontalAxis::OnPaint(
     GraphContext *ctx,
     DrawData &data,
     Scalar width
 ) {
+  OnPrePaint(ctx, data);
+
   ctx->SetFont(FontId_WRYH, 10);
 
   Scalar pad = 0;
@@ -90,13 +97,8 @@ void HorizontalAxis::OnPaint(
     draw(x, strScales_[i], false);
   }
 
-  if (crosshairX_ != -1) {
-    int val = data.ToIdx(crosshairX_);
-    if (hdKey_)
-      val = (int) data.Get(hdKey_, val);
-    crosshairText_.Format(L"%d", val);
-
-    draw(crosshairX_, crosshairText_, true);
+  if (crosshairIndex_ != -1) {
+    draw(crosshairPoint_.x, crosshairText_, true);
   }
 }
 
