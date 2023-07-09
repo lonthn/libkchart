@@ -1,6 +1,24 @@
+// MIT License
 //
-// Created by luo-zeqi on 2013/4/13.
+// Copyright (c) 2023 luo-zeqi
 //
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
 
 #include "KChartWnd.h"
 #include "Indicator.h"
@@ -72,37 +90,27 @@ void LoadKLineData(const char *file, DataSet &data) {
   char *endptr = nullptr;
 
   // Skip the header.
-  ifs.getline(buf, bufSize - 1, '\n');
-  std::string line(buf);
+  ifs.getline(buf, bufSize);
   std::vector<std::string> fields;
-  StrSplit(line.c_str(), ",", true, fields);
-  for (int i = 1; i < fields.size(); ++i) {
+  StrSplit(buf, ",", true, fields);
+  for (int i = 1; i < fields.size(); ++i)
     columns.push_back(data.AddCol(fields[i]));
-    if (fields[i] == "OPEN"
-     || fields[i] == "HIGH"
-     || fields[i] == "LOW"
-     || fields[i] == "CLOSE") {
-      columns.back()->precision = 100;
-    }
-  }
 
   while (!ifs.eof()) {
-    fields.clear();
     ifs.getline(buf, bufSize - 1, '\n');
-    line.assign(buf);
+    if (strlen(buf) == 0) break;
 
-    if (line.empty()) break;
-    StrSplit(line.c_str(), ",", true, fields);
-
+    const char *str = strstr(buf, ",");
     int idx = data.AddRow();
     for (int i = 0; i < columns.size(); ++i) {
-      DataType val = std::strtoll(fields[i + 1].c_str(), &endptr, 10);
+      DataType val = std::strtoll(str, &endptr, 10);
       data.Set(columns[i], idx, val);
     }
   }
 }
 
 void OnKeyDown(WPARAM wParam) {
+  // ×éºÏ¼üÅÐ¶Ï
   if (GetKeyState(VK_SHIFT) < 0) {
     if (wParam == VK_LEFT) {
       wnd->FastScroll(-1);

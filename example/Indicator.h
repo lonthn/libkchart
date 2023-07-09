@@ -1,6 +1,24 @@
+// MIT License
 //
-// Created by luo-zeqi on 2023/6/22.
+// Copyright (c) 2023 luo-zeqi
 //
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
 
 #ifndef LIBKCHART_INDICATOR_H
 #define LIBKCHART_INDICATOR_H
@@ -49,45 +67,38 @@ std::vector<Graphics *> MA(DataSet &data, const std::vector<int> &nums) {
 std::vector<Graphics *> MACD(DataSet &data) {
   ColumnKey close = data.FindCol("CLOSE");
 
-  ColumnKey dif = data.AddCol("DIF", 100);
-  ColumnKey dea = data.AddCol("DEA", 100);
+  ColumnKey dif  = data.AddCol("DIF", 100);
+  ColumnKey dea  = data.AddCol("DEA", 100);
   ColumnKey macd = data.AddCol("MACD", 100);
 
-  float n1 = 12;
+  float n1 = 12, n2 = 26, n3 = 9;
   float sc11 = float(n1 - 1) / float(n1 + 1);
   float sc12 = 2 / float(n1 + 1);
-  float n2 = 26;
   float sc21 = float(n2 - 1) / float(n2 + 1);
   float sc22 = 2 / float(n2 + 1);
-  float n3 = 9;
   float sc31 = float(n3 - 1) / float(n3 + 1);
   float sc32 = 2 / float(n3 + 1);
 
-  float preEMA1 = 0, preEMA2 = 0, preDEA = 0;
+  float EMA1 = 0, EMA2 = 0, DEA = 0;
   for (int i = 0; i < data.RowCount(); i++) {
     // EMA(n1) = 前一日EMA(n1)×(n1-1)/(n1+1) + 今日收盘价×2/(n1+1)
-    preEMA1 = preEMA1 * sc11 + float(data.Get(close, i)) * sc12;
+    EMA1 = EMA1 * sc11 + float(data.Get(close, i)) * sc12;
     // EMA(n2) = 前一日EMA(n2)×(n2-1)/(n2+1) + 今日收盘价×2/(n2+1)
-    preEMA2 = preEMA2 * sc21 + float(data.Get(close, i)) * sc22;
+    EMA2 = EMA2 * sc21 + float(data.Get(close, i)) * sc22;
     // DIF = 今日EMA(n1) － 今日EMA(n2)
-    float difv = preEMA1 - preEMA2;
+    float difv = EMA1 - EMA2;
     // 今日DEA = 前一日DEA×(n3-1)/(n3+1) + 今日DIF×2/(n3+1)
-    preDEA = preDEA * sc31 + difv * sc32;
+    DEA = DEA * sc31 + difv * sc32;
 
     data.Set(dif, i, DataType(difv));
-    data.Set(dea, i, DataType(preDEA));
-    data.Set(macd, i, DataType((difv - preDEA) * 2));
+    data.Set(dea, i, DataType(DEA));
+    data.Set(macd, i, DataType((difv - DEA) * 2));
   }
 
   std::vector<Graphics *> graphics;
-
-  HistogramGraph *hg = new HistogramGraph(macd);
-  hg->FixedWidth = 1; // macd 使用的是柱线图
-
-  graphics.push_back(hg);
+  graphics.push_back(new HistogramGraph(macd, 1));
   graphics.push_back(new PolyLineGraph(dif));
   graphics.push_back(new PolyLineGraph(dea));
-
   return graphics;
 }
 

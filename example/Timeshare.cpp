@@ -1,13 +1,30 @@
+// MIT License
 //
-// Created by luo-zeqi on 2023/5/24.
+// Copyright (c) 2023 luo-zeqi
 //
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
 
 #include "KChartWnd.h"
 #include "Indicator.h"
 
 #include <vector>
 #include <fstream>
-#include <random>
 
 #define CKEY_OPEN   "OPEN"
 #define CKEY_CLOSE  "CLOSE"
@@ -34,7 +51,7 @@ int WINAPI WinMain(
 
   // 将文件中的历史数据加载到 DataSet 中
   DataSet &data = wnd->DataRef();
-  LoadTimeshareData("SH000001-min.csv", data);
+  LoadTimeshareData("000001.0.csv", data);
 
   // 241条分时数据
   wnd->SetFixedCount(241);
@@ -58,6 +75,7 @@ int WINAPI WinMain(
   mainArea->AddGraphics(new PolyLineGraph(data.FindCol(CKEY_AVG)));
   // 副图成交量.
   indiArea->AddGraphics(new VolumeGraph(data));
+  indiArea->SetZeroOrigin(true);
   //indiArea->SetLabelVisible(false);
 
   wnd->Show(TRUE);
@@ -70,11 +88,11 @@ void LoadTimeshareData(const char *file, DataSet &data) {
   std::ifstream ifs(file, std::ios::binary);
   assert(ifs.is_open());
 
-  ColumnKey close = data.AddCol(CKEY_CLOSE, 100);
+  ColumnKey close = data.AddCol(CKEY_CLOSE, 10000);
   ColumnKey vol = data.AddCol(CKEY_VOLUME);
-  ColumnKey avg = data.AddCol(CKEY_AVG, 100);
-  ColumnKey open = data.AddCol(CKEY_OPEN, 100);
-  ColumnKey ord = data.AddCol(CKEY_ORDERR);
+  ColumnKey avg = data.AddCol(CKEY_AVG, 10000);
+  ColumnKey open = data.AddCol(CKEY_OPEN, 10000);
+  ColumnKey ord = data.AddCol(CKEY_ORDERR, 10000);
   ColumnKey time = data.AddCol(CKEY_TIME);
 
   const int bufSize = 1024;
@@ -100,7 +118,7 @@ void LoadTimeshareData(const char *file, DataSet &data) {
     DataType volume = std::strtoll(fields[2].c_str(), &endptr, 10);
     data.Set(time,  idx, std::strtoll(fields[0].c_str(), &endptr, 10));
     data.Set(close, idx, std::strtoll(fields[1].c_str(), &endptr, 10));
-    data.Set(vol,   idx, volume - preVol);
+    data.Set(vol,   idx, volume);
     data.Set(avg,   idx, std::strtoll(fields[3].c_str(), &endptr, 10));
     // 开盘价不做展示，仅仅只是为了确定成交量柱图的颜色.
     if (rand() % 2 == 1) {
@@ -108,8 +126,6 @@ void LoadTimeshareData(const char *file, DataSet &data) {
     } else {
       data.Set(open, idx, data.Get(close, idx) - 1);
     }
-    preVol = volume;
-
     minv = min(minv, data.Get(close, idx));
     maxv = max(maxv, data.Get(close, idx));
   }
@@ -119,7 +135,7 @@ void LoadTimeshareData(const char *file, DataSet &data) {
   for (int i = 0; i < data.RowCount(); ++i) {
     int   sign = rand() % 2;
     int   percent = rand() % 100;
-    float rate = (float)percent / 100 * 0.2f;
+    float rate = (float)percent / 100 * 0.15f;
     if (sign == 0)
       rate *= -1;
     data.Set(ord, i, data.Get(close, 0) + DataType((float)x * rate));

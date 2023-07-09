@@ -1,6 +1,24 @@
+// MIT License
 //
-// Created by luo-zeqi on 2023/5/13.
+// Copyright (c) 2023 luo-zeqi
 //
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
 
 #include "HorizontalAxis.h"
 #include "KChartWnd.h"
@@ -26,10 +44,10 @@ void HorizontalAxis::SetCrosshairBackColor(Color color) {
 
 void HorizontalAxis::OnCrosshairIdxChanged(GraphContext *ctx, DrawData& data) {
   if (crosshairIndex_ != -1) {
-    int val = crosshairIndex_;
+    DataType val = crosshairIndex_;
     if (hdKey_)
-      val = (int) data.Get(hdKey_, val);
-    crosshairText_.Format(L"%d", val);
+      val = data.Get(hdKey_, (int)val);
+    crosshairText_.Format(L"%lld", val);
   }
 }
 
@@ -55,8 +73,8 @@ void HorizontalAxis::OnFitIdx(
     a.Format(L"%d", begin);
     b.Format(L"%d", end - 1);
   } else {
-    a.Format(L"%d", (int) data.Get(hdKey_, begin));
-    b.Format(L"%d", (int) data.Get(hdKey_, end - 1));
+    a.Format(L"%lld", data.Get(hdKey_, begin));
+    b.Format(L"%lld", data.Get(hdKey_, end - 1));
   }
   strScales_.push_back(a);
   strScales_.push_back(b);
