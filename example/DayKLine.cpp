@@ -44,7 +44,7 @@ int WINAPI WinMain(
   wnd = new KChartWnd();
   wnd->CreateWin(NULL);
 
-  // ½«ÎÄ¼þÖÐµÄÀúÊ·ÈÕKÊý¾Ý¼ÓÔØµ½ DataSet ÖÐ,
+  // å°†æ–‡ä»¶ä¸­çš„åŽ†å²æ—¥Kæ•°æ®åŠ è½½åˆ° DataSet ä¸­,
   DataSet &data = wnd->DataRef();
   LoadKLineData("SZ000001.csv", data);
 
@@ -54,19 +54,19 @@ int WINAPI WinMain(
   GraphArea *ind1Area = wnd->CreateArea(0.2f);
   GraphArea *ind2Area = wnd->CreateArea(0.2f);
 
-  // ÓÉÓÚ³É½»Á¿Êý×Ö½Ï´ó, ÔÚÕ¹Ê¾¿Ì¶ÈÊ±¿ÉÒÔÓÃ´øµ¥Î»µÄÐÎÊ½.
+  // ç”±äºŽæˆäº¤é‡æ•°å­—è¾ƒå¤§, åœ¨å±•ç¤ºåˆ»åº¦æ—¶å¯ä»¥ç”¨å¸¦å•ä½çš„å½¢å¼.
   ind1Area->GetLeftAxis()->SetScaleFormatter(ToStringWithUnit);
   ind1Area->GetRightAxis()->SetScaleFormatter(ToStringWithUnit);
 
-  // ÔÚÖ÷Í¼ÇøÓòÌí¼ÓKÏßÍ¼ÐÎ, ÐèÒªÓÃµ½Êý¾Ý¼¯ÖÐµÄ¿ª¸ßµÍÊÕ4ÁÐÊý¾Ý.
+  // åœ¨ä¸»å›¾åŒºåŸŸæ·»åŠ Kçº¿å›¾å½¢, éœ€è¦ç”¨åˆ°æ•°æ®é›†ä¸­çš„å¼€é«˜ä½Žæ”¶4åˆ—æ•°æ®.
   mainArea->AddGraphics(new KLineGraph(data));
-  // Ìí¼ÓÖ÷Í¼Ö¸±êMA.
+  // æ·»åŠ ä¸»å›¾æŒ‡æ ‡MA.
   mainArea->AddGraphics(MA(data, {5, 10, 15, 30, 60}));
-  // ¸±Í¼³É½»Á¿ÒÔ¼°MACDÖ¸±ê.
+  // å‰¯å›¾æˆäº¤é‡ä»¥åŠMACDæŒ‡æ ‡.
   ind1Area->AddGraphics(new VolumeGraph(data));
   ind2Area->AddGraphics(MACD(data));
 
-  // MACD Ö¸±êÍ¼ÐèÒªÖÐÐÄÖá.
+  // MACD æŒ‡æ ‡å›¾éœ€è¦ä¸­å¿ƒè½´.
   ind2Area->SetCentralAxis(0);
 
   wnd->Show(TRUE);
@@ -100,17 +100,18 @@ void LoadKLineData(const char *file, DataSet &data) {
     ifs.getline(buf, bufSize - 1, '\n');
     if (strlen(buf) == 0) break;
 
-    const char *str = strstr(buf, ",");
+    const char *str = strstr(buf, ",") + 1;
     int idx = data.AddRow();
     for (int i = 0; i < columns.size(); ++i) {
       DataType val = std::strtoll(str, &endptr, 10);
       data.Set(columns[i], idx, val);
+      str = endptr + 1;
     }
   }
 }
 
 void OnKeyDown(WPARAM wParam) {
-  // ×éºÏ¼üÅÐ¶Ï
+  // ç»„åˆé”®åˆ¤æ–­
   if (GetKeyState(VK_SHIFT) < 0) {
     if (wParam == VK_LEFT) {
       wnd->FastScroll(-1);
