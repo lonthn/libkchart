@@ -31,9 +31,10 @@ namespace kchart {
 
 bool GVClassReg = true;
 
-KChartWnd::KChartWnd()
+KChartWnd::KChartWnd(DataSet& data)
     : handle_(NULL)
     , procThunk_(NULL)
+    , data_(data)
     , beginIdx_(0)
     , endIdx_(0)
     , size_({0})
@@ -63,13 +64,18 @@ KChartWnd::KChartWnd()
 
   hAxis_ = new HorizontalAxis(this);
 
-//  rowCount_ = data_.RowCount();
-//  data_.AddObserver([&](const Index2& idx) {
-//    if (data_.RowCount() == rowCount_)
-//      return;
-//    rowCount_ = data_.RowCount();
-//    hAxis_->OnFitIdx(beginIdx_, endIdx_);
-//  });
+  data_.AddObserver(100000, [&](DataSet &data, int oldRow) {
+    int newRow = data.RowCount();
+    if (oldRow != newRow) {
+      if (endIdx_ == oldRow) {
+        endIdx_   += newRow - oldRow;
+        beginIdx_ += newRow - oldRow;
+      }
+    }
+    FitNewWidth();
+    for (auto area: areas_)
+      area->UpdateScales();
+  });
 }
 
 KChartWnd::~KChartWnd() {
@@ -135,6 +141,7 @@ bool KChartWnd::CreateWin(HWND hParent) {
   LONG_PTR ptr = procThunk_->GetThunkedCodePtr();
   SetWindowLongPtrA(handle_, GWLP_WNDPROC, ptr);
 
+  FitNewWidth();
   return true;
 }
 

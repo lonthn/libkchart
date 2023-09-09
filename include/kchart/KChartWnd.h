@@ -39,7 +39,7 @@ namespace kchart {
 /// 窗体中的一个控件.
 class KChartWnd {
 public:
-  KChartWnd();
+  explicit KChartWnd(DataSet& data);
   virtual ~KChartWnd();
 
   HWND Handle() {
@@ -164,7 +164,7 @@ private:
   // 图形之间的距离更合适, 而图形的宽度会被置为1
   float sWidth_;
 
-  DataSet data_;
+  DataSet &data_;
 
   WndProcThunk *procThunk_;
   GraphContext *gcContext_;

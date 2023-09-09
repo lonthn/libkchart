@@ -66,6 +66,7 @@ void sse_min_max(
     p++;
   }
 
+  count -= off;
   int gCount = count >> 2;
   for (int i = 0; i < gCount; ++i) {
     if (p[0] > *pmax) {*pmax = p[0]; *pmaxi = (i<<2);   }
@@ -343,7 +344,7 @@ void GraphArea::UpdateMinMax() {
 }
 
 void GraphArea::UpdateScales() {
-  if (begin_ == end_)
+  if (begin_ == end_ || panel_->DataRef().Empty())
     return;
 
   if (graphics_.empty()) {
@@ -433,7 +434,7 @@ void GraphArea::OnFitIdx(int begin, int end) {
 }
 
 void GraphArea::OnPaint(GraphContext *ctx, DrawData &data) {
-  if (graphics_.empty())
+  if (graphics_.empty() || data.Empty())
     return;
 
   OnPrePaint(ctx, data);

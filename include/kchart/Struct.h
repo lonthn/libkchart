@@ -32,7 +32,26 @@
 #include <functional>
 #include <atlstr.h>
 
+
 namespace kchart {
+
+struct Setter {
+  int fieldOffset;
+  typedef void (*Function)(kchart::DataType *, void *);
+  Function fn;
+
+  Setter(int off, Function f)
+  : fieldOffset(off)
+  , fn(f) {
+  }
+
+  void operator () (kchart::DataType *d, void *s) const {
+    fn(d, ((char *)s) + fieldOffset);
+  }
+};
+
+#define MAKE_SETTER(s, m, f) \
+  new Setter(offsetof(s, m), f)
 
 // 数据列相关信息
 typedef struct ColumnInfo {
@@ -41,6 +60,8 @@ typedef struct ColumnInfo {
   // 存储浮点数.
   int precision;
   int index;
+
+  Setter *setter;
 } *ColumnKey;
 
 struct Index2 {
@@ -54,12 +75,15 @@ struct Index2 {
 // 供根据图形所需的数据对应的 ColumnKey(通过AddCol/FindCol获得).
 struct DataSet {
 
-  typedef std::function<void(const Index2 &)> ObserverFn;
+  typedef std::function<void(DataSet &data, int)> ObserverFn;
 
   DataSet();
 
   // @brief 添加列, 需提供列名.
-  ColumnKey AddCol(const std::string &name, int precision = 1);
+  ColumnKey AddCol(const std::string &name);
+  ColumnKey AddCol(const std::string &name, int precision);
+  ColumnKey AddCol(const std::string &name, Setter *setter);
+  ColumnKey AddCol(const std::string &name, int precision, Setter *setter);
   // @brief 添加一行.
   int AddRow();
   // @brief 添加行, 可指定行数.
@@ -68,8 +92,11 @@ struct DataSet {
   // @brief 根据列名查找 ColumnKey(类索引, 用于获取
   // 对应列的数据).
   ColumnKey FindCol(const std::string &name);
+
   inline int RowCount() const { return rowCount; }
   inline int ColCount() const { return (int) cols.size(); }
+  inline int LastRow() const { return rowCount - 1; }
+  inline int Empty() const { return rowCount == 0; }
 
   DataType Get(int col, int row);
   DataType Get(const Index2 &idx);
@@ -82,15 +109,29 @@ struct DataSet {
   // 不会触发观察者.
   DataRows &operator[](int col);
 
-  int AddObserver(int col, ObserverFn &&fn);
-  void DelObserver(int col, int id);
+  void FillRow(void *src, int idx) {
+    for (auto &item : colKeys) {
+      ColumnKey col = &item.second;
+      if (col->setter)
+        (*col->setter)(&(cols[col->index][idx]), src);
+    }
+  }
+
+  // @brief 添加数据监听, 当Notify被调用后会通过ObserverFn
+  // 通知所有观察者, priority 越小越先收到通知.
+  int AddObserver(int priority, ObserverFn &&fn);
+  void RemoveObserver(int id);
+  // 告诉所有 Observer 有新增行数据.
+  void Notify();
 
 private:
   DataCols cols;
   int rowCount;
+  int oldRowCount;
   std::map<std::string, ColumnInfo> colKeys;
   int observerCounter;
-  std::vector<std::map<int, ObserverFn>> observers;
+  std::vector<std::map<int, ObserverFn>> dataObservers;
+  std::map<int, ObserverFn> observers;
 };
 
 // @brief 在绘图时，这里有你需要的数据.
@@ -125,6 +166,9 @@ public:
   }
   inline DataType Get(const Index2 &idx) const {
     return data.Get(idx.col, off + idx.row);
+  }
+  inline bool Empty() const {
+    return count == 0;
   }
   inline int NativeIdx(int idx) const {
     return idx - off;

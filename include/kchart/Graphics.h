@@ -75,6 +75,15 @@ public:
   Color NormalColor;
 };
 
+/// 组合图形,
+class CombGraph : public Graphics {
+public:
+  CombGraph(): Graphics(0) { }
+
+public:
+  std::vector<Graphics *> graph_;
+};
+
 /// K线图，需要提供开高低收4列数据
 /// 列名分别是: OPEN, HIGH, LOW, CLOSE
 class KLineGraph : public Graphics {

@@ -46,12 +46,12 @@ int WINAPI WinMain(
     LPSTR lpCmdLine,
     int nShowCmd
 ) {
-  wnd = new KChartWnd();
-  wnd->CreateWin(NULL);
-
+  DataSet data;
   // 将文件中的历史数据加载到 DataSet 中
-  DataSet &data = wnd->DataRef();
   LoadTimeshareData("000001.0.csv", data);
+
+  wnd = new KChartWnd(data);
+  wnd->CreateWin(NULL);
 
   // 241条分时数据
   wnd->SetFixedCount(241);
@@ -61,8 +61,8 @@ int WINAPI WinMain(
   GraphArea *indiArea = wnd->CreateArea(0.3f);
 
   // 由于成交量数字较大, 在展示刻度时可以用带单位的形式.
-  indiArea->GetLeftAxis()->SetScaleFormatter(ToStringWithUnit);
-  indiArea->GetRightAxis()->SetScaleFormatter(ToStringWithUnit);
+  indiArea->GetLeftAxis()->SetFormatter(ToStrWithUnit);
+  indiArea->GetRightAxis()->SetFormatter(ToStrWithUnit);
 
   // 将中心轴设置为第一条数据.
   ColumnKey colKey = data.FindCol(CKEY_CLOSE);

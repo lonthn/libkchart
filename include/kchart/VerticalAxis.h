@@ -32,7 +32,7 @@
 namespace kchart {
 
 typedef CStringW (*TransformFn)(DataType, int, int);
-static CStringW ToStringWithUnit(DataType, int, int);
+static CStringW ToStrWithUnit(DataType val, int precision, int decimals);
 
 /**
  *
@@ -57,7 +57,7 @@ public:
    * 保留2位小数.
    * @param fn
    */
-  void SetScaleFormatter(TransformFn fn) { transformFn_ = fn; }
+  void SetFormatter(TransformFn fn) { transformFn_ = fn; }
   void SetPrecision(int n) { precision_ = n; }
   void SetDecimals(int d) { decimals_ = d; }
   void SetScaleColor(Color color);
@@ -95,7 +95,7 @@ private:
 
 // 如果将数据完整展示，我们可能没有足够的空间，所以可以
 // 尝试带上单位.
-static CStringW ToStringWithUnit(
+static CStringW ToStrWithUnit(
     DataType val,
     int precision,
     int decimals

@@ -27,10 +27,11 @@
 namespace kchart {
 
 DataSet::DataSet()
-    : rowCount(0) {
+    : rowCount(0)
+    , oldRowCount(0) {
 }
 
-ColumnKey DataSet::AddCol(const std::string &name, int precision) {
+ColumnKey DataSet::AddCol(const std::string &name) {
   if (name.empty())
     return nullptr;
 
@@ -40,11 +41,32 @@ ColumnKey DataSet::AddCol(const std::string &name, int precision) {
 
   USES_CONVERSION;
   CStringW wname = A2W(name.c_str());
-  colKeys.emplace(name, ColumnInfo{wname, precision, ColCount()});
+  colKeys.emplace(name, ColumnInfo{wname, 1, ColCount()});
   cols.emplace_back(rowCount);
-  observers.emplace_back();
+  dataObservers.emplace_back();
 
   return &colKeys[name];
+}
+
+ColumnKey DataSet::AddCol(const std::string &name, int precision) {
+  ColumnKey col = AddCol(name);
+  if (col) col->precision = precision;
+  return col;
+}
+
+ColumnKey DataSet::AddCol(const std::string &name, Setter *setter) {
+  ColumnKey col = AddCol(name);
+  if (col) col->setter = setter;
+  return col;
+}
+
+ColumnKey DataSet::AddCol(const std::string &name, int precision, Setter *setter) {
+  ColumnKey col = AddCol(name);
+  if (col) {
+    col->precision = precision;
+    col->setter = setter;
+  }
+  return col;
 }
 
 int DataSet::AddRow() {
@@ -94,8 +116,8 @@ void DataSet::Set(int col, int row, DataType val) {
   assert(row < rowCount);
   cols[col][row] = val;
 
-  for (auto &item: observers[col])
-    item.second({col, row});
+//  for (auto &item: dataObservers[col])
+//    item.second({col, row});
 }
 
 void DataSet::Set(const Index2 &idx, DataType val) {
@@ -103,8 +125,8 @@ void DataSet::Set(const Index2 &idx, DataType val) {
   assert(idx.row < rowCount);
   cols[idx.col][idx.row] = val;
 
-  for (auto &item: observers[idx.col])
-    item.second(idx);
+//  for (auto &item: dataObservers[idx.col])
+//    item.second(idx);
 }
 
 void DataSet::Set(ColumnKey col, int row, DataType val) {
@@ -112,8 +134,8 @@ void DataSet::Set(ColumnKey col, int row, DataType val) {
   assert(row < rowCount);
   cols[col->index][row] = val;
 
-  for (auto &item: observers[col->index])
-    item.second({col->index, row});
+//  for (auto &item: dataObservers[col->index])
+//    item.second({col->index, row});
 }
 
 DataRows &DataSet::Get(ColumnKey col) {
@@ -126,14 +148,20 @@ DataRows &DataSet::operator[](int col) {
   return cols[col];
 }
 
-int DataSet::AddObserver(int cid, ObserverFn&& fn) {
-  int id = observerCounter++;
-  observers[cid].emplace(id, fn);
+
+int DataSet::AddObserver(int priority, ObserverFn &&fn) {
+  int id = (observerCounter++) + priority;
+  observers.emplace(id, fn);
   return id;
 }
+void DataSet::RemoveObserver(int id) {
+  observers.erase(id);
+}
 
-void DataSet::DelObserver(int col, int id) {
-  observers[col].erase(id);
+void DataSet::Notify() {
+  for (auto &item : observers)
+    item.second(*this, oldRowCount);
+  oldRowCount = rowCount;
 }
 
 }
