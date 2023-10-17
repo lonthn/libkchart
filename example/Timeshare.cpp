@@ -36,7 +36,8 @@
 using namespace kchart;
 
 void LoadTimeshareData(const char *file, DataSet &data);
-void MessageLoop();
+void Build();
+int  MessageLoop();
 
 KChartWnd *wnd = NULL;
 
@@ -52,6 +53,17 @@ int WINAPI WinMain(
 
   wnd = new KChartWnd(data);
   wnd->CreateWin(NULL);
+
+  Build();
+
+  data.Notify();
+
+  wnd->Show(TRUE);
+  return MessageLoop();
+}
+
+void Build() {
+  DataSet &data = wnd->DataRef();
 
   // 241条分时数据
   wnd->SetFixedCount(241);
@@ -73,14 +85,11 @@ int WINAPI WinMain(
   mainArea->AddGraphics(new HistogramGraph(data.FindCol(CKEY_ORDERR), 1));
   mainArea->AddGraphics(new PolyLineGraph(data.FindCol(CKEY_CLOSE)));
   mainArea->AddGraphics(new PolyLineGraph(data.FindCol(CKEY_AVG)));
+
   // 副图成交量.
   indiArea->AddGraphics(new VolumeGraph(data));
   indiArea->SetZeroOrigin(true);
   //indiArea->SetLabelVisible(false);
-
-  wnd->Show(TRUE);
-  MessageLoop();
-  return 0;
 }
 
 void LoadTimeshareData(const char *file, DataSet &data) {
@@ -142,7 +151,7 @@ void LoadTimeshareData(const char *file, DataSet &data) {
   }
 }
 
-void MessageLoop() {
+int MessageLoop() {
   MSG msg;
   while (wnd->Handle() && ::GetMessageA(&msg, NULL, 0, 0)) {
     ::TranslateMessage(&msg);
@@ -158,4 +167,6 @@ void MessageLoop() {
       }
     }
   }
+
+  return 0;
 }

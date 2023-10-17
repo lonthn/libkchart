@@ -22,18 +22,18 @@
 
 #include "KChartWnd.h"
 #include "Indicator.h"
+#include "pulldata.h"
 
 #include <vector>
 #include <fstream>
 
-#define CKEY_DATE "DATE"
-
 using namespace kchart;
 
 void LoadKLineData(const char *file, DataSet &data);
-void MessageLoop();
+void Build(DataSet &data);
+int  MessageLoop();
 
-KChartWnd *wnd = NULL;
+static KChartWnd *wnd;
 
 int WINAPI WinMain(
     HINSTANCE hInstance,
@@ -41,22 +41,34 @@ int WINAPI WinMain(
     LPSTR lpCmdLine,
     int nShowCmd
 ) {
-  wnd = new KChartWnd();
+  DataSet data;
+  LoadKLineData("../SZ000001.csv", data);
+
+  wnd = new KChartWnd(data);
   wnd->CreateWin(NULL);
 
-  // 将文件中的历史日K数据加载到 DataSet 中,
-  DataSet &data = wnd->DataRef();
-  LoadKLineData("SZ000001.csv", data);
+  Build(data);
 
-  wnd->GetHAxis()->SetScaleCKey(data.FindCol(CKEY_DATE));
+  // 通知计算指标数据
+  data.Notify();
 
+  wnd->Show(TRUE);
+  return MessageLoop();
+}
+
+void Build(DataSet &data) {
   GraphArea *mainArea = wnd->CreateArea(0.6f);
   GraphArea *ind1Area = wnd->CreateArea(0.2f);
   GraphArea *ind2Area = wnd->CreateArea(0.2f);
 
+  wnd->GetHAxis()->SetScaleCKey(data.FindCol("DATE"));
+
   // 由于成交量数字较大, 在展示刻度时可以用带单位的形式.
-  ind1Area->GetLeftAxis()->SetScaleFormatter(ToStringWithUnit);
-  ind1Area->GetRightAxis()->SetScaleFormatter(ToStringWithUnit);
+  ind1Area->GetLeftAxis()->SetFormatter(ToStrWithUnit);
+  ind1Area->GetRightAxis()->SetFormatter(ToStrWithUnit);
+  ind1Area->SetZeroOrigin(true);
+  // MACD 指标图需要中心轴.
+  ind2Area->SetCentralAxis(0);
 
   // 在主图区域添加K线图形, 需要用到数据集中的开高低收4列数据.
   mainArea->AddGraphics(new KLineGraph(data));
@@ -65,14 +77,8 @@ int WINAPI WinMain(
   // 副图成交量以及MACD指标.
   ind1Area->AddGraphics(new VolumeGraph(data));
   ind2Area->AddGraphics(MACD(data));
-
-  // MACD 指标图需要中心轴.
-  ind2Area->SetCentralAxis(0);
-
-  wnd->Show(TRUE);
-  MessageLoop();
-  return 0;
 }
+
 
 void LoadKLineData(const char *file, DataSet &data) {
 //  symbol,date,open,high,low,close,volume
@@ -102,9 +108,9 @@ void LoadKLineData(const char *file, DataSet &data) {
 
     const char *str = strstr(buf, ",") + 1;
     int idx = data.AddRow();
-    for (int i = 0; i < columns.size(); ++i) {
+    for (auto & column : columns) {
       DataType val = std::strtoll(str, &endptr, 10);
-      data.Set(columns[i], idx, val);
+      data.Set(column, idx, val);
       str = endptr + 1;
     }
   }
@@ -144,7 +150,9 @@ void OnKeyDown(WPARAM wParam) {
   }
 }
 
-void MessageLoop() {
+int MessageLoop() {
+  // StartPull(wnd->Handle());
+
   MSG msg;
   while (wnd->Handle() && ::GetMessageA(&msg, NULL, 0, 0)) {
     ::TranslateMessage(&msg);
@@ -154,4 +162,7 @@ void MessageLoop() {
       OnKeyDown(msg.wParam);
     }
   }
+
+  // StopPull();
+  return 0;
 }
