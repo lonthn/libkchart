@@ -22,7 +22,6 @@
 
 #include "KChartWnd.h"
 #include "Indicator.h"
-#include "pulldata.h"
 
 #include <vector>
 #include <fstream>

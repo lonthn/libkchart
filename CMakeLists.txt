@@ -24,6 +24,8 @@ if(${BUILD_EXAMPLE})
   add_executable(example_ts
   		example/Timeshare.cpp)
 
+  target_link_libraries(example_dk ws2_32)
+
   set(DST_PATH ${CMAKE_CURRENT_BINARY_DIR}/${BUILD_TYPE})
   file(COPY example/SZ000001.csv     DESTINATION ${DST_PATH})
   file(COPY example/SH000001-min.csv DESTINATION ${DST_PATH})
