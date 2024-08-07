@@ -12,6 +12,7 @@ set(source
   ./VerticalAxis.cpp
   ./HorizontalAxis.cpp
   ./CrosshairDelegate.cpp
+  ./StrUtils.cpp
   ./graph/GdiPlusGC.cpp
 )
 
