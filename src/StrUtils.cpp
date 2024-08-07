@@ -20,29 +20,74 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#ifndef LIBKCHART_STRUTILS_H
-#define LIBKCHART_STRUTILS_H
+#include "StrUtils.h"
 
-#include "Def.h"
-
-#include <vector>
-#include <atlstr.h>
+#include <cmath>
+#include <cstdarg>
 
 namespace kchart {
 
-extern CStringW DataToStr(
+CStringW DataToStr(
     DataType val,
     int precision,
     int decimals
-);
+)
+{
+  wchar_t txt[64] = {0};
+  DataType number = val / precision;
+  DataType decima = val % precision;
 
-extern void StrSplit(
+  int len = swprintf_s(txt, 64 - 1, L"%lld", number);
+  if (decimals <= 0)
+    return CStringW(txt);
+
+  txt[len++] = '.';
+
+  int decimal_start = len;
+  swprintf_s(&txt[len], 64 - len - 1, L"%lld", decima);
+
+  for (int i = decimal_start; i < decimal_start + decimals; i++)
+    if (txt[i] == '\0') txt[i] = '0';
+
+  txt[len + decimals] = '\0';
+  return CStringW(txt);
+}
+
+void StrSplit(
     const char *str,
     const char *delis,
     bool ignore_space,
     std::vector<std::string>& out
-);
+)
+{
+  if (!*str)
+    return;
 
+  int delislen = (int) strlen(delis);
+
+  while (true) {
+    if (ignore_space && *str == ' ') {
+      str++;
+      continue;
+    }
+    const char *s = strstr(str, delis);
+    if (!s) {
+      out.emplace_back(str);
+      return;
+    }
+
+    if (s == str && ignore_space) {
+      str += delislen;
+      continue;
+    }
+
+    int len = static_cast<int>(s - str);
+    out.emplace_back(str, len);
+    str = s + delislen;
+
+    if (!*str)
+      return;
+  }
 }
 
-#endif //LIBKCHART_STRUTILS_H
+}

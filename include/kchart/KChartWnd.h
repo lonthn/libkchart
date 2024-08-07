@@ -39,20 +39,30 @@ namespace kchart {
 /// 窗体中的一个控件.
 class KChartWnd {
 public:
-  explicit KChartWnd(DataSet& data);
+  KChartWnd();
+  /**
+   * @brief 构造一个图标窗体，需要提供一个数据表
+   * 图形数据将通过该数据表获取，或者可以根据情况
+   * 考虑使用无参构造 KChartWnd()，由内部自行创建。
+   * @param data 图形数据表，不能为 null.
+   */
+  explicit KChartWnd(std::shared_ptr<DataSet> data);
   virtual ~KChartWnd();
 
   HWND Handle() {
       return handle_;
   }
   DataSet &DataRef() {
-      return data_;
+      return *data_;
   }
   void SetCrosshairColor(Color color) {
       crosshairColor_ = color;
   }
   Color GetCrosshairColor() const {
       return crosshairColor_;
+  }
+  GraphContext *GetGraphContext() {
+    return gcContext_;
   }
 
   /// @brief 必须调用的函数, 使用WindowsAPI创建窗体
@@ -117,11 +127,12 @@ protected:
   LRESULT CALLBACK OnMessage(
           UINT msg, WPARAM wParam, LPARAM lParam
   );
-  virtual LRESULT OnCreate(WPARAM wParam, LPARAM lParam);
-  virtual LRESULT OnSize(WPARAM wParam, LPARAM lParam);
-  virtual LRESULT OnPaint(WPARAM wParam, LPARAM lParam);
-  virtual LRESULT OnLBtnDown(WPARAM wParam, LPARAM lParam);
-  virtual LRESULT OnMouseMove(WPARAM wParam, LPARAM lParam);
+
+  virtual LRESULT OnProcCreate();
+  virtual LRESULT OnProcSize(Scalar width, Scalar height);
+  virtual LRESULT OnProcPaint(Rect rect);
+  virtual LRESULT OnProcLBtnDown(Point point);
+  virtual LRESULT OnProcMouseMove(Point point);
 
 private:
   void FillDrawData(GraphArea *area, DrawData &data);
@@ -164,7 +175,7 @@ private:
   // 图形之间的距离更合适, 而图形的宽度会被置为1
   float sWidth_;
 
-  DataSet &data_;
+  std::shared_ptr<DataSet> data_;
 
   WndProcThunk *procThunk_;
   GraphContext *gcContext_;

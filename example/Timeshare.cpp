@@ -47,16 +47,15 @@ int WINAPI WinMain(
     LPSTR lpCmdLine,
     int nShowCmd
 ) {
-  DataSet data;
+  auto data = std::make_shared<DataSet>();
+
   // 将文件中的历史数据加载到 DataSet 中
-  LoadTimeshareData("000001.0.csv", data);
+  LoadTimeshareData("SH000001-min.csv", *data);
 
   wnd = new KChartWnd(data);
   wnd->CreateWin(NULL);
 
   Build();
-
-  data.Notify();
 
   wnd->Show(TRUE);
   return MessageLoop();
@@ -90,6 +89,8 @@ void Build() {
   indiArea->AddGraphics(new VolumeGraph(data));
   indiArea->SetZeroOrigin(true);
   //indiArea->SetLabelVisible(false);
+
+  data.Notify();
 }
 
 void LoadTimeshareData(const char *file, DataSet &data) {
@@ -97,12 +98,12 @@ void LoadTimeshareData(const char *file, DataSet &data) {
   std::ifstream ifs(file, std::ios::binary);
   assert(ifs.is_open());
 
-  ColumnKey close = data.AddCol(CKEY_CLOSE, 10000);
-  ColumnKey vol = data.AddCol(CKEY_VOLUME);
-  ColumnKey avg = data.AddCol(CKEY_AVG, 10000);
-  ColumnKey open = data.AddCol(CKEY_OPEN, 10000);
-  ColumnKey ord = data.AddCol(CKEY_ORDERR, 10000);
-  ColumnKey time = data.AddCol(CKEY_TIME);
+  ColumnKey close = data.CreateCol(CKEY_CLOSE, 10000);
+  ColumnKey vol = data.CreateCol(CKEY_VOLUME);
+  ColumnKey avg = data.CreateCol(CKEY_AVG, 10000);
+  ColumnKey open = data.CreateCol(CKEY_OPEN, 10000);
+  ColumnKey ord = data.CreateCol(CKEY_ORDERR, 10000);
+  ColumnKey time = data.CreateCol(CKEY_TIME);
 
   const int bufSize = 1024;
   char buf[bufSize];

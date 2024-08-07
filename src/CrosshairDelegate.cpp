@@ -27,8 +27,8 @@ namespace kchart {
 CrosshairDelegate::CrosshairDelegate()
     : crosshairIndex_(-1)
     , mstrCrosshairIdx_(-1)
-    , crosshairPoint_{-1, -1}
     , forceChange_(false) {
+  crosshairPoint_ = {-1, -1};
 }
 
 Point CrosshairDelegate::GetCrosshairPoint() const {

@@ -45,6 +45,9 @@ public:
     fontFamilies_[FontId_WRYH]  = L"微软雅黑";
   }
 
+  virtual void AllocBuffer(const Size &size) { }
+  virtual void SwapBuffer(void *native) { }
+
 public:
   // 控制原点位置.
   virtual Point Translate(const Point &point) { return {0, 0}; }
@@ -80,9 +83,11 @@ public:
   ) {}
 
   /**
-   * 画一条不规则折线, 由2个或以上的点组成.
-   * @param pointNum 预先指定折点数量.
-   * @example 使用时需要用到3个函数，在调用EndPolyLine时
+   * 画一条自定义折线,
+   * 提供至少2个或以上的点，将这些点连接完成折线图
+   * @param pointNum 指定点的数量.
+   * @example
+   * // 使用时需要用到3个函数，在调用EndPolyLine时
    * 将所有点连接渲染在画布上:
    *  ctx.BeginPolyLine(5);
    *  for (int i = 0; i < 5; i++) {
@@ -100,8 +105,8 @@ public:
    * @param p 文本左上角的位置.
    */
   virtual void DrawStr(const CStringW &str, const Point &p) {}
-  // 要绘制文本, 通畅可能需要 测量文本的宽高，
-  // 我们会考虑 SetFont 函数的 size 参数.
+  // 要绘制文本, 通常可能需要 测量文本的宽高，
+  // 我们会考虑 字体 的 size 参数.
   virtual Size MeasureStr(const CStringW &str) { return {0, 0}; }
 };
 

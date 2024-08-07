@@ -31,37 +31,36 @@ DataSet::DataSet()
     , oldRowCount(0) {
 }
 
-ColumnKey DataSet::AddCol(const std::string &name) {
+ColumnKey DataSet::CreateCol(const std::string &name) {
   if (name.empty())
     return nullptr;
 
-  auto iter = colKeys.find(name);
-  if (iter != colKeys.end())
+  auto iter = columns.find(name);
+  if (iter != columns.end())
     return &iter->second;
 
   USES_CONVERSION;
   CStringW wname = A2W(name.c_str());
-  colKeys.emplace(name, ColumnInfo{wname, 1, ColCount()});
-  cols.emplace_back(rowCount);
-  dataObservers.emplace_back();
+  columns.emplace(name, ColumnInfo{wname, 1, ColCount()});
+  raw.emplace_back(rowCount);
 
-  return &colKeys[name];
+  return &columns[name];
 }
 
-ColumnKey DataSet::AddCol(const std::string &name, int precision) {
-  ColumnKey col = AddCol(name);
+ColumnKey DataSet::CreateCol(const std::string &name, int precision) {
+  ColumnKey col = CreateCol(name);
   if (col) col->precision = precision;
   return col;
 }
 
-ColumnKey DataSet::AddCol(const std::string &name, Setter *setter) {
-  ColumnKey col = AddCol(name);
+ColumnKey DataSet::CreateCol(const std::string &name, Setter *setter) {
+  ColumnKey col = CreateCol(name);
   if (col) col->setter = setter;
   return col;
 }
 
-ColumnKey DataSet::AddCol(const std::string &name, int precision, Setter *setter) {
-  ColumnKey col = AddCol(name);
+ColumnKey DataSet::CreateCol(const std::string &name, int precision, Setter *setter) {
+  ColumnKey col = CreateCol(name);
   if (col) {
     col->precision = precision;
     col->setter = setter;
@@ -70,7 +69,7 @@ ColumnKey DataSet::AddCol(const std::string &name, int precision, Setter *setter
 }
 
 int DataSet::AddRow() {
-  for (auto &col: cols) {
+  for (auto &col: raw) {
     col.resize(col.size() + 1);
   }
 
@@ -78,7 +77,7 @@ int DataSet::AddRow() {
 }
 
 void DataSet::AddRow(int n) {
-  for (auto &col: cols) {
+  for (auto &col: raw) {
     col.resize(col.size() + n);
   }
 
@@ -86,66 +85,66 @@ void DataSet::AddRow(int n) {
 }
 
 ColumnKey DataSet::FindCol(const std::string &name) {
-  auto iter = colKeys.find(name);
-  if (iter != colKeys.end())
+  auto iter = columns.find(name);
+  if (iter != columns.end())
     return &iter->second;
 
   return nullptr;
 }
 
 DataType DataSet::Get(int col, int row) {
-  assert(col < (int) cols.size());
+  assert(col < (int) raw.size());
   assert(row < rowCount);
-  return cols[col][row];
+  return raw[col][row];
 }
 
 DataType DataSet::Get(const Index2 &idx) {
-  assert(idx.col < (int) cols.size());
+  assert(idx.col < (int) raw.size());
   assert(idx.row < rowCount);
-  return cols[idx.col][idx.row];
+  return raw[idx.col][idx.row];
 }
 
 DataType DataSet::Get(ColumnKey col, int row) {
-  assert(col->index < (int) cols.size());
+  assert(col->index < (int) raw.size());
   assert(row < rowCount);
-  return cols[col->index][row];
+  return raw[col->index][row];
 }
 
 void DataSet::Set(int col, int row, DataType val) {
-  assert(col < (int) cols.size());
+  assert(col < (int) raw.size());
   assert(row < rowCount);
-  cols[col][row] = val;
+  raw[col][row] = val;
 
 //  for (auto &item: dataObservers[col])
 //    item.second({col, row});
 }
 
 void DataSet::Set(const Index2 &idx, DataType val) {
-  assert(idx.col < (int) cols.size());
+  assert(idx.col < (int) raw.size());
   assert(idx.row < rowCount);
-  cols[idx.col][idx.row] = val;
+  raw[idx.col][idx.row] = val;
 
 //  for (auto &item: dataObservers[idx.col])
 //    item.second(idx);
 }
 
 void DataSet::Set(ColumnKey col, int row, DataType val) {
-  assert(col->index < (int) cols.size());
+  assert(col->index < (int) raw.size());
   assert(row < rowCount);
-  cols[col->index][row] = val;
+  raw[col->index][row] = val;
 
 //  for (auto &item: dataObservers[col->index])
 //    item.second({col->index, row});
 }
 
 DataRows &DataSet::Get(ColumnKey col) {
-  assert(col->index < (int) cols.size());
-  return cols[col->index];
+  assert(col->index < (int) raw.size());
+  return raw[col->index];
 }
 
 DataRows &DataSet::operator[](int col) {
-  assert(col < (int) cols.size());
-  return cols[col];
+  assert(col < (int) raw.size());
+  return raw[col];
 }
 
 

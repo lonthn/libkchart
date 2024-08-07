@@ -46,6 +46,17 @@ void VerticalAxis::OnMoveCrosshair(Point point) {
   crosshairY_ = point.y;
 }
 
+Scalar VerticalAxis::OnMeasureWidth(GraphContext *ctx) {
+  Scalar width = 0;
+  scaleSize_.resize(strScales_.size());
+  for (int i = 0; i < strScales_.size(); i++) {
+    Size size = ctx->MeasureStr(strScales_[i]);
+    scaleSize_[i] = size;
+    width = max(width, size.width);
+  }
+  return width;
+}
+
 void VerticalAxis::OnPaint(
     GraphContext *ctx,
     DrawData &data,

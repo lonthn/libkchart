@@ -31,7 +31,7 @@ namespace kchart {
 
 bool GVClassReg = true;
 
-KChartWnd::KChartWnd(DataSet& data)
+KChartWnd::KChartWnd(std::shared_ptr<DataSet> data)
     : handle_(NULL)
     , procThunk_(NULL)
     , data_(data)
@@ -46,7 +46,7 @@ KChartWnd::KChartWnd(DataSet& data)
     , crosshairPoint_({-1, -1})
     , lvVisible_(true)
     , rvVisible_(true)
-    , vAxisWidth_(80)
+    , vAxisWidth_(70)
     , borderColor_(0xFF3F3F3F)
     , backColor_(0xFF2B2B2B) {
   union {
@@ -64,7 +64,7 @@ KChartWnd::KChartWnd(DataSet& data)
 
   hAxis_ = new HorizontalAxis(this);
 
-  data_.AddObserver(100000, [&](DataSet &data, int oldRow) {
+  data_->AddObserver(100000, [&](DataSet &data, int oldRow) {
     int newRow = data.RowCount();
     if (oldRow != newRow) {
       if (endIdx_ == oldRow) {
@@ -170,7 +170,10 @@ void KChartWnd::SetLocation(const Point &point) {
 }
 
 void KChartWnd::SetBounds(const Rect &rect) {
-
+    ::MoveWindow(
+        handle_, rect.left, rect.top,
+        rect.Width(), rect.Height(), TRUE
+    );
 }
 
 void KChartWnd::SetTitle(const std::string &str) {
@@ -352,11 +355,11 @@ void KChartWnd::MoveCrosshair(int offset) {
 
   GraphArea *area = areas_.front();
 
-  int showCount = min(endIdx_ - beginIdx_, data_.RowCount());
+  int showCount = min(endIdx_ - beginIdx_, data_->RowCount());
   if (showCount <= 0)
     return;
 
-  DrawData data(data_, beginIdx_, showCount);
+  DrawData data(*data_, beginIdx_, showCount);
   FillDrawData(area, data);
 
   int idx;
@@ -368,7 +371,7 @@ void KChartWnd::MoveCrosshair(int offset) {
   idx = cidx + offset;
   if (idx < 0 || idx >= data.Count()) {
   	if (offset < 0 && (beginIdx_+offset) < 0)          return;
-  	if (offset > 0 && (endIdx_+offset) > data_.RowCount()) return;
+  	if (offset > 0 && (endIdx_+offset) > data_->RowCount()) return;
   	idx = offset > 0 ? (data.Count() - 1) : 0;
   	beginIdx_ += offset;
   	endIdx_ += offset;
@@ -400,7 +403,7 @@ void KChartWnd::FastScroll(int dir) {
 
   //  «∑ÒµΩ±ﬂΩÁ¡À?
   if ((dir < 0 && beginIdx_ == 0)
-   || (dir > 0 && endIdx_ >= data_.RowCount())) {
+   || (dir > 0 && endIdx_ >= data_->RowCount())) {
     return;
   }
 
@@ -413,9 +416,9 @@ void KChartWnd::FastScroll(int dir) {
   if (beginIdx_ < 0) {
     beginIdx_ = 0;
     endIdx_ = showCount;
-  } else if (endIdx_ > data_.RowCount()) {
-    beginIdx_ = data_.RowCount() - showCount;
-    endIdx_ = data_.RowCount();
+  } else if (endIdx_ > data_->RowCount()) {
+    beginIdx_ = data_->RowCount() - showCount;
+    endIdx_ = data_->RowCount();
   }
 
   for (GraphArea *area: areas_) {
@@ -463,19 +466,33 @@ LRESULT KChartWnd::OnMessage(
   LRESULT nRes;
   switch (msg) {
     case WM_CREATE:
-      nRes = OnCreate(wParam, lParam);
+      nRes = OnProcCreate();
       break;
     case WM_SIZE:
-      nRes = OnSize(wParam, lParam);
+      nRes = OnProcSize((Scalar)LOWORD(lParam), (Scalar)HIWORD(lParam));
       break;
-    case WM_PAINT:
-      nRes = OnPaint(wParam, lParam);
+    case WM_PAINT: {
+      PAINTSTRUCT paint;
+      BeginPaint(handle_, &paint);
+
+      Rect rect = {
+          paint.rcPaint.left, paint.rcPaint.top,
+          paint.rcPaint.right, paint.rcPaint.bottom
+      };
+
+      gcContext_->AllocBuffer(rect.Size());
+      nRes = OnProcPaint(rect);
+      gcContext_->SwapBuffer(paint.hdc);
+
+      EndPaint(handle_, &paint);
+    }
       break;
-    case WM_LBUTTONDOWN:
-      nRes = OnLBtnDown(wParam, lParam);
+    case WM_LBUTTONDOWN: {
+      nRes = OnProcLBtnDown({ (Scalar)LOWORD(lParam), (Scalar)HIWORD(lParam) });
+    }
       break;
     case WM_MOUSEMOVE:
-      nRes = OnMouseMove(wParam, lParam);
+      nRes = OnProcMouseMove({ (Scalar)LOWORD(lParam), (Scalar)HIWORD(lParam) });
       break;
     case WM_DESTROY:
       handle_ = NULL; // no break
@@ -490,14 +507,11 @@ LRESULT KChartWnd::OnMessage(
   return DefWindowProcA(handle_, msg, wParam, lParam);
 }
 
-LRESULT KChartWnd::OnCreate(WPARAM wParam, LPARAM lParam) {
+LRESULT KChartWnd::OnProcCreate() {
   return 0;
 }
 
-LRESULT KChartWnd::OnSize(WPARAM wParam, LPARAM lParam) {
-  Scalar width = Scalar(LOWORD(lParam));
-  Scalar height = Scalar(HIWORD(lParam));
-
+LRESULT KChartWnd::OnProcSize(Scalar width, Scalar height) {
   if (width == size_.width
       && height == size_.height) {
     return 0;
@@ -521,23 +535,16 @@ LRESULT KChartWnd::OnSize(WPARAM wParam, LPARAM lParam) {
   return 0;
 }
 
-LRESULT KChartWnd::OnPaint(WPARAM wParam, LPARAM lParam) {
-  PAINTSTRUCT paint;
-  BeginPaint(handle_, &paint);
-
-  RECT rect = paint.rcPaint;
+LRESULT KChartWnd::OnProcPaint(Rect rect) {
   Size size = {Scalar(rect.right - rect.left),
                Scalar(rect.bottom - rect.top)};
 
-  GdiPlusGC *gctx = dynamic_cast<GdiPlusGC*>(gcContext_);
-  gctx->AllocBuffer(size);
-
-  gctx->SetTranslate({0});
+  gcContext_->SetTranslate({0});
 
   // ÃÓ≥‰±≥æ∞
-  gctx->SetColor(backColor_);
+  gcContext_->SetColor(backColor_);
 
-  gctx->FillRect(0, 0, size.width, size.height);
+  gcContext_->FillRect(0, 0, size.width, size.height);
 
   // TODO:
 
@@ -546,73 +553,72 @@ LRESULT KChartWnd::OnPaint(WPARAM wParam, LPARAM lParam) {
     VerticalAxis *lvAxis = lvAxis_[i];
     VerticalAxis *rvAxis = rvAxis_[i];
 
+    lvAxis->SetWidth(vAxisWidth_);
+    rvAxis->SetWidth(vAxisWidth_);
+
     Rect bounds = area->GetBounds();
     Scalar offY = area->GetContentTop();
 
-    int showCount = min(endIdx_ - beginIdx_, data_.RowCount());
-    DrawData data(data_, beginIdx_, showCount);
+    int showCount = min(endIdx_ - beginIdx_, data_->RowCount());
+    DrawData data(*data_, beginIdx_, showCount);
     FillDrawData(area, data);
 
-    gctx->SetTranslate({0, bounds.top});
+    gcContext_->SetTranslate({0, bounds.top});
 
     if (lvVisible_) {
-      lvAxis->OnPaint(gctx, data, offY);
-      gctx->Translate({vAxisWidth_, 0});
+      lvAxis->OnPaint(gcContext_, data, offY);
+      gcContext_->Translate({vAxisWidth_, 0});
     }
 
-    area->OnPaint(gctx, data);
+    area->OnPaint(gcContext_, data);
 
     if (rvVisible_) {
-      gctx->Translate({bounds.Width(), 0});
-      rvAxis->OnPaint(gctx, data, offY);
+      gcContext_->Translate({bounds.Width(), 0});
+      rvAxis->OnPaint(gcContext_, data, offY);
     }
 
     // ∫·÷·œﬂ
-    gctx->SetTranslate({0});
-    gctx->SetColor(borderColor_);
-    gctx->DrawLine(
+    gcContext_->SetTranslate({0});
+    gcContext_->SetColor(borderColor_);
+    gcContext_->DrawLine(
         bounds.left, bounds.bottom,
         bounds.right, bounds.bottom
     );
 
     if (i == (int) areas_.size() - 1) {
-      gctx->SetTranslate({bounds.left, bounds.bottom});
-      hAxis_->OnPaint(gctx, data, bounds.Width());
+      gcContext_->SetTranslate({bounds.left, bounds.bottom});
+      hAxis_->OnPaint(gcContext_, data, bounds.Width());
     }
   }
 
-  gctx->SetTranslate({0});
+  gcContext_->SetTranslate({0});
 
   // ◊›÷·œﬂ
   Rect bounds = GetAreaBounds();
-  gctx->SetColor(borderColor_);
+  gcContext_->SetColor(borderColor_);
   if (lvVisible_) {
-    gctx->DrawLine(
+    gcContext_->DrawLine(
         bounds.left, bounds.top,
         bounds.left, bounds.bottom
     );
   }
   if (rvVisible_) {
-    gctx->DrawLine(
+    gcContext_->DrawLine(
         bounds.right, bounds.top,
         bounds.right, bounds.bottom
     );
   }
 
-  gctx->SwapBuffer(paint.hdc);
-
-  EndPaint(handle_, &paint);
-
   return 0;
 }
 
-LRESULT KChartWnd::OnLBtnDown(WPARAM wParam, LPARAM lParam) {
+LRESULT KChartWnd::OnProcLBtnDown(Point point) {
   if (!crosshairEnable_)
     return 1;
 
   crosshairVisible_ = !crosshairVisible_;
   if (crosshairVisible_)
-    OnSetCrosshairPoint({LOWORD(lParam), HIWORD(lParam)});
+    OnSetCrosshairPoint(point);
   else
     OnSetCrosshairPoint({-1, -1});
 
@@ -620,9 +626,9 @@ LRESULT KChartWnd::OnLBtnDown(WPARAM wParam, LPARAM lParam) {
   return 0;
 }
 
-LRESULT KChartWnd::OnMouseMove(WPARAM wParam, LPARAM lParam) {
+LRESULT KChartWnd::OnProcMouseMove(Point point) {
   if (crosshairVisible_) {
-    OnSetCrosshairPoint({LOWORD(lParam), HIWORD(lParam)});
+    OnSetCrosshairPoint(point);
     Invalidate();
     return 0;
   }
@@ -679,13 +685,13 @@ void KChartWnd::FitNewWidth() {
 
   int newCount = int(float(width) / sWidth_);
   if (newCount > 0) {
-    if (newCount > data_.RowCount()) {
+    if (newCount > data_->RowCount()) {
       beginIdx_ = 0;
       endIdx_ = newCount;
     } else {
-      if (endIdx_ == 0 || endIdx_ > data_.RowCount()) {
-        if (data_.RowCount() > newCount)
-          endIdx_ = data_.RowCount();
+      if (endIdx_ == 0 || endIdx_ > data_->RowCount()) {
+        if (data_->RowCount() > newCount)
+          endIdx_ = data_->RowCount();
         else
           endIdx_ = newCount;
       }

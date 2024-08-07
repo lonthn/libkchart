@@ -25,7 +25,7 @@ cmake -G <Visual Studio> -DCMAKE_BUILD_TYPE=Release ..
 ```c++
     DataSet data;
     // 添加数据列
-    ColumnKey vol = data.AddCol("VOLUME");
+    ColumnKey vol = data.CreateCol("VOLUME");
     
     int row = 500; // 假设有 500 条数据
     // 添加 500 行

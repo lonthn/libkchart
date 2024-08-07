@@ -64,9 +64,11 @@ public:
   void SetCrosshairBackColor(Color color);
 
   Scalar GetWidth() const { return width_; }
+  void SetWidth(Scalar width) { width_ = width; }
 
   virtual void OnSetScales(const DataRows &scales);
   virtual void OnMoveCrosshair(Point point);
+  virtual Scalar OnMeasureWidth(GraphContext *ctx);
   virtual void OnPaint(
       GraphContext *ctx,
       DrawData &data,
@@ -91,6 +93,7 @@ private:
   std::vector<DataType> scales_;
   // 绘制刻度时所使用的可不是数字类型，为了避免重复转换，我们缓存一下.
   std::vector<CStringW> strScales_;
+  std::vector<Size> scaleSize_;
 };
 
 // 如果将数据完整展示，我们可能没有足够的空间，所以可以

@@ -63,19 +63,19 @@ std::vector<Graphics *> MA(DataSet &data, const std::vector<int> &nums) {
   std::vector<Graphics *> graph;
   graph.reserve(nums.size());
   for (int n : nums) {
-    ColumnKey ma = data.AddCol("MA" + std::to_string(n), 100);
+    ColumnKey ma = data.CreateCol("MA" + std::to_string(n), 100);
     graph.push_back(new PolyLineGraph(ma));
-    data.AddObserver(0, [&, man=n](DataSet &data, int oldRow) {
-      calc(data, oldRow, man);
+    data.AddObserver(0, [&, n](DataSet &data, int oldRow) {
+      calc(data, oldRow, n);
     });
   }
   return graph;
 }
 
 std::vector<Graphics *> MACD(DataSet &data) {
-  ColumnKey dif = data.AddCol("DIF", 100);
-  ColumnKey dea = data.AddCol("DEA", 100);
-  ColumnKey macd = data.AddCol("MACD", 100);
+  ColumnKey dif = data.CreateCol("DIF", 100);
+  ColumnKey dea = data.CreateCol("DEA", 100);
+  ColumnKey macd = data.CreateCol("MACD", 100);
 
   auto calc = [=](DataSet &data, int oldRow) {
     ColumnKey close = data.FindCol("CLOSE");

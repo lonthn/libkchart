@@ -99,7 +99,7 @@ void LoadKLineData(const char *file, DataSet &data) {
   std::vector<std::string> fields;
   StrSplit(buf, ",", true, fields);
   for (int i = 1; i < fields.size(); ++i)
-    columns.push_back(data.AddCol(fields[i]));
+    columns.push_back(data.CreateCol(fields[i]));
 
   while (!ifs.eof()) {
     ifs.getline(buf, bufSize - 1, '\n');

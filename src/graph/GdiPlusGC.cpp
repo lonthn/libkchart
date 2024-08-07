@@ -99,10 +99,10 @@ void GdiPlusGC::AllocBuffer(const Size &size) {
   cacheSize_ = size;
 }
 
-void GdiPlusGC::SwapBuffer(HDC dc) {
+void GdiPlusGC::SwapBuffer(void *native) {
   int cx = (int) cacheSize_.width;
   int cy = (int) cacheSize_.height;
-  ::BitBlt(dc, 0, 0, cx, cy, memDC_, 0, 0, SRCCOPY);
+  ::BitBlt((HDC) native, 0, 0, cx, cy, memDC_, 0, 0, SRCCOPY);
 }
 
 Point GdiPlusGC::Translate(const Point &point) {

@@ -80,10 +80,10 @@ struct DataSet {
   DataSet();
 
   // @brief 添加列, 需提供列名.
-  ColumnKey AddCol(const std::string &name);
-  ColumnKey AddCol(const std::string &name, int precision);
-  ColumnKey AddCol(const std::string &name, Setter *setter);
-  ColumnKey AddCol(const std::string &name, int precision, Setter *setter);
+  ColumnKey CreateCol(const std::string &name);
+  ColumnKey CreateCol(const std::string &name, int precision);
+  ColumnKey CreateCol(const std::string &name, Setter *setter);
+  ColumnKey CreateCol(const std::string &name, int precision, Setter *setter);
   // @brief 添加一行.
   int AddRow();
   // @brief 添加行, 可指定行数.
@@ -94,7 +94,7 @@ struct DataSet {
   ColumnKey FindCol(const std::string &name);
 
   inline int RowCount() const { return rowCount; }
-  inline int ColCount() const { return (int) cols.size(); }
+  inline int ColCount() const { return (int) raw.size(); }
   inline int LastRow() const { return rowCount - 1; }
   inline int Empty() const { return rowCount == 0; }
 
@@ -110,10 +110,10 @@ struct DataSet {
   DataRows &operator[](int col);
 
   void FillRow(void *src, int idx) {
-    for (auto &item : colKeys) {
+    for (auto &item : columns) {
       ColumnKey col = &item.second;
       if (col->setter)
-        (*col->setter)(&(cols[col->index][idx]), src);
+        (*col->setter)(&(raw[col->index][idx]), src);
     }
   }
 
@@ -125,12 +125,13 @@ struct DataSet {
   void Notify();
 
 private:
-  DataCols cols;
+  std::map<std::string, DataType> variables;
+  std::map<std::string, ColumnInfo> columns;
+  DataCols raw;
   int rowCount;
   int oldRowCount;
-  std::map<std::string, ColumnInfo> colKeys;
+
   int observerCounter;
-  std::vector<std::map<int, ObserverFn>> dataObservers;
   std::map<int, ObserverFn> observers;
 };
 

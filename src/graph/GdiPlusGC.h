@@ -37,8 +37,8 @@ public:
 
   virtual ~GdiPlusGC();
 
-  void AllocBuffer(const Size &size);
-  void SwapBuffer(HDC dc);
+  void AllocBuffer(const Size &size) override;
+  void SwapBuffer(void *native) override;
 
 public:
   Point Translate(const Point &point) override;
