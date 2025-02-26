@@ -16,3 +16,5 @@ cmake-build-release-visual-studio/
 *.tlog
 *.obj
 *.json
+/.vs
+/out/build/x64-Debug

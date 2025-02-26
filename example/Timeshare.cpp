@@ -20,11 +20,12 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "KChartWnd.h"
+#include "../kchart.h"
 #include "Indicator.h"
 
 #include <vector>
 #include <fstream>
+#include <cassert>
 
 #define CKEY_OPEN   "OPEN"
 #define CKEY_CLOSE  "CLOSE"
@@ -41,12 +42,7 @@ int  MessageLoop();
 
 KChartWnd *wnd = NULL;
 
-int WINAPI WinMain(
-    HINSTANCE hInstance,
-    HINSTANCE hPrevInstance,
-    LPSTR lpCmdLine,
-    int nShowCmd
-) {
+int main() {
   auto data = std::make_shared<DataSet>();
 
   // 将文件中的历史数据加载到 DataSet 中

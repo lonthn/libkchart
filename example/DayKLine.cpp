@@ -20,11 +20,12 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "KChartWnd.h"
+#include "../kchart.h"
 #include "Indicator.h"
 
 #include <vector>
 #include <fstream>
+#include <cassert>
 
 using namespace kchart;
 
@@ -34,22 +35,23 @@ int  MessageLoop();
 
 static KChartWnd *wnd;
 
-int WINAPI WinMain(
-    HINSTANCE hInstance,
-    HINSTANCE hPrevInstance,
-    LPSTR lpCmdLine,
-    int nShowCmd
-) {
-  DataSet data;
-  LoadKLineData("../SZ000001.csv", data);
+//int WINAPI WinMain(
+//    HINSTANCE hInstance,
+//    HINSTANCE hPrevInstance,
+//    LPSTR lpCmdLine,
+//    int nShowCmd
+//) {
+int main() {
+  auto data = std::make_shared<DataSet>();
+  LoadKLineData("SZ000001.csv", *data);
 
   wnd = new KChartWnd(data);
   wnd->CreateWin(NULL);
 
-  Build(data);
+  Build(*data);
 
   // 通知计算指标数据
-  data.Notify();
+  data->Notify();
 
   wnd->Show(TRUE);
   return MessageLoop();

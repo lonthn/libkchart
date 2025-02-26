@@ -1,24 +1,26 @@
 cmake_minimum_required(VERSION 3.8)
 
-project(kchart)
+set(PROJ_NAME kchart)
+project(${PROJ_NAME})
 
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /SUBSYSTEM:WINDOWS")
+add_definitions(-D_WIN32)
+
+message(${CMAKE_EXE_LINKER_FLAGS})
 
 if (DEFINED BUILD_EXAMPLE)
   unset(BUILD_EXAMPLE CACHE)
 endif ()
 option(BUILD_EXAMPLE "Enable to build examples(KLine & Timeshare)." ON)
 
-include_directories(.)
-include_directories(include/kchart)
+add_library(${PROJ_NAME} STATIC kchart.cpp)
 
-add_subdirectory(src)
 
 if(${BUILD_EXAMPLE})
   message(STATUS "Build examples")
 
-  link_libraries(kchart)
+  link_libraries(${PROJ_NAME})
   add_executable(example_dk
   		example/DayKLine.cpp)
   add_executable(example_ts

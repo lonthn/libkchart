@@ -11,13 +11,12 @@
 * 软件基于 Gdiplus 作为绘图API, 其API已经过抽象, 您可以实现您自己的绘图引擎.
 
 ### 构建
-该项目是使用 CLion 开发的桌面程序依赖库，您可以通过 CMakeLists.txt 来构建 vs 的解决方案：
+您可以通过 CMakeLists.txt 来构建 vs 的解决方案：
 ```shell
 mkdir build
 cd build
 cmake -G <Visual Studio> -DCMAKE_BUILD_TYPE=Release ..
 ```
-或者如果您有vs2017及以上的版本可以直接选择vs目录下的解决方案打开.
 
 ### 用法
 我们以K线图中成交量柱图为例, 当然也提供了完整的样例程序 [example/DayKLine.cpp](./example/DayKLine.cpp)

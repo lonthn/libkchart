@@ -23,7 +23,7 @@
 #ifndef LIBKCHART_INDICATOR_H
 #define LIBKCHART_INDICATOR_H
 
-#include "KChartWnd.h"
+#include "../kchart.h"
 
 #include <vector>
 
