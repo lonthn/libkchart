@@ -11,7 +11,7 @@
 * 软件基于 Gdiplus 作为绘图API, 其API已经过抽象, 您可以实现您自己的绘图引擎.
 
 ### 构建
-您可以通过 CMakeLists.txt 来构建 vs 的解决方案：
+您可以通过`cmake`来构建`vs`的解决方案。或者直降将源文件拷贝至项目中一同编译：
 ```shell
 mkdir build
 cd build
@@ -48,7 +48,7 @@ tip: 单个绘图区域可同时添加多个不同图形进行叠加.
     HistogramGraph *graph = new HistogramGraph(vol);
     area->AddGraphics(graph);
 ```
-4. 最后一步, 所有准备工作完成后, 只需要调用 Show 将窗体展示出来.
+4. 最后一步, 所有准备工作完成后, 只需要调用`Show()`函数将窗体展示出来.
 ```c++
     wnd->Show(true);
 
