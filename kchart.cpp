@@ -31,8 +31,8 @@ namespace kchart {
 #pragma comment(lib, "gdiplus.lib")
 
 
-// Èç¹û½«Êı¾İÍêÕûÕ¹Ê¾£¬ÎÒÃÇ¿ÉÄÜÃ»ÓĞ×ã¹»µÄ¿Õ¼ä£¬ËùÒÔ¿ÉÒÔ
-// ³¢ÊÔ´øÉÏµ¥Î».
+// å¦‚æœå°†æ•°æ®å®Œæ•´å±•ç¤ºï¼Œæˆ‘ä»¬å¯èƒ½æ²¡æœ‰è¶³å¤Ÿçš„ç©ºé—´ï¼Œæ‰€ä»¥å¯ä»¥
+// å°è¯•å¸¦ä¸Šå•ä½.
 CStringW ToStrWithUnit(
   DataType val,
   int precision,
@@ -45,11 +45,11 @@ CStringW ToStrWithUnit(
   double dval = double(val) / double(precision);
   CStringW unit;
   if (num < 100000000) {
-    unit = L"Íò";
+    unit = L"ä¸‡";
     dval /= 10000;
   }
   else {
-    unit = L"ÒÚ";
+    unit = L"äº¿";
     dval /= 100000000;
   }
 
@@ -207,12 +207,12 @@ void GdiPlusGC::AllocBuffer(const Size& size) {
 
     gdiGraph_ = new Gdiplus::Graphics(memDC_);
 
-    // »ñÈ¡µ±Ç°µÄ DPI ÉèÖÃ
+    // è·å–å½“å‰çš„ DPI è®¾ç½®
     int dpiX, dpiY;
     dpiX = gdiGraph_->GetDpiX();
     dpiY = gdiGraph_->GetDpiY();
 
-    // ÉèÖÃËõ·ÅÒò×Ó
+    // è®¾ç½®ç¼©æ”¾å› å­
     gdiGraph_->ScaleTransform(dpiX / 96.0f, dpiY / 96.0f);
   }
 
@@ -357,12 +357,12 @@ void GdiPlusGC::DrawStr(const CStringW& str, const Point& p) {
 Size GdiPlusGC::MeasureStr(const CStringW& str) {
   Gdiplus::StringFormat format(Gdiplus::StringAlignmentNear);
 
-  // ½ÓÊÕ×ÖÌåµÄÏÔÊ¾ÇøÓò£¬Èç¿í¸ß
+  // æ¥æ”¶å­—ä½“çš„æ˜¾ç¤ºåŒºåŸŸï¼Œå¦‚å®½é«˜
   Gdiplus::RectF stringRect;
   Gdiplus::RectF layoutRect(0, 0, 600, 100);
   // gdiGraph_->SetTextRenderingHint(Gdiplus::TextRenderingHintClearTypeGridFit );
 
-  //»ñµÃ×ÖÌå¸ß¶ÈÓë¿í¶ÈstringRect
+  //è·å¾—å­—ä½“é«˜åº¦ä¸å®½åº¦stringRect
   gdiGraph_->MeasureString(str.GetString(), str.GetLength(),
     gdiFont_, layoutRect,
     &format, &stringRect);
@@ -679,7 +679,7 @@ void HorizontalAxis::OnFitIdx(
   scales_.push_back(begin);
   scales_.push_back(end - 1);
 
-  // ÓÃ»§Èç¹û²»Ìá¹©¿Ì¶ÈÖµÊı¾İÁĞ£¬¾ÍÖ±½Ó½«Ë÷ÒıÕ¹Ê¾.
+  // ç”¨æˆ·å¦‚æœä¸æä¾›åˆ»åº¦å€¼æ•°æ®åˆ—ï¼Œå°±ç›´æ¥å°†ç´¢å¼•å±•ç¤º.
   CStringW a, b;
   if (hdKey_ == nullptr) {
     a.Format(L"%d", begin);
@@ -772,7 +772,7 @@ void KLineGraph::Paint(GraphContext* gctx, const DrawData& data) {
     else
       gctx->SetColor(NormalColor);
 
-    // Ó°Ïß
+    // å½±çº¿
     if (width == 1 || open == close) {
       if (high != low) {
         Scalar top = data.ToPY(high);
@@ -796,24 +796,24 @@ void KLineGraph::Paint(GraphContext* gctx, const DrawData& data) {
       }
     }
 
-    // »æÖÆÏäÌå
+    // ç»˜åˆ¶ç®±ä½“
     if (width > 1) {
       Scalar left = x - (reactWidth / 2);
-      if (open < close) // ÑôÏß
+      if (open < close) // é˜³çº¿
       {
         gctx->FillRect(
           left, data.ToPY(close),
           left + reactWidth, data.ToPY(open)
         );
       }
-      else if (open > close) // ÒõÏß
+      else if (open > close) // é˜´çº¿
       {
         gctx->FillRect(
           left, data.ToPY(open),
           left + reactWidth, data.ToPY(close)
         );
       }
-      else // Ê®×ÖÏß
+      else // åå­—çº¿
       {
         Scalar y = data.ToPY(close);
         gctx->DrawLine(left, y, left + reactWidth, y);
@@ -823,7 +823,7 @@ void KLineGraph::Paint(GraphContext* gctx, const DrawData& data) {
 
   gctx->SetColor(TextColor);
 
-  // ×î¸ßÓë×îµÍµã±ê×¢
+  // æœ€é«˜ä¸æœ€ä½ç‚¹æ ‡æ³¨
   auto fn = [=](DataType num, int i) {
     Scalar dis = 10;
     CStringW str = DataToStr(num, cids[Open]->precision, Digit);
@@ -920,7 +920,7 @@ void HistogramGraph::Paint(GraphContext* gctx, const DrawData& data) {
 }
 
 /* GraphArea -----------------------------------------------------------*/
-// Ê¹ÓÃ sse ¼ÓËÙ²éÕÒ×î´ó×îĞ¡Öµ
+// ä½¿ç”¨ sse åŠ é€ŸæŸ¥æ‰¾æœ€å¤§æœ€å°å€¼
 void sse_min_max(
   int64_t* p,
   int count,
@@ -980,7 +980,7 @@ void sse_min_max(
   *pmaxi += off;
 }
 
-// Ê¹ÓÃ sse ¼ÓËÙ²éÕÒ×î´ó×îĞ¡Öµ
+// ä½¿ç”¨ sse åŠ é€ŸæŸ¥æ‰¾æœ€å¤§æœ€å°å€¼
 void sse_max(
   int64_t* p,
   int count,
@@ -1075,7 +1075,7 @@ Rect GraphArea::GetBounds() const {
 Scalar GraphArea::GetLabelHeight() const {
   return labelVisible_ ? labelHeight_ : 0;
 }
-// ´ú±íµ±Ç°½çÃæÕ¹Ê¾µÄËùÓĞÊı¾İµÄ min max
+// ä»£è¡¨å½“å‰ç•Œé¢å±•ç¤ºçš„æ‰€æœ‰æ•°æ®çš„ min max
 DataType GraphArea::GetMin() const {
   return cacheMin_;
 }
@@ -1171,7 +1171,7 @@ void GraphArea::ReGatherLabel(GraphContext* ctx, DrawData& data) {
   int count = 0;
   for (const auto& item : graphics_) {
     Color color;
-    // ´øÖĞÖáµÄÍ¼ĞÎÑÕÉ«ÉèÖÃ·½Ê½»òĞí»á²»Í¬.
+    // å¸¦ä¸­è½´çš„å›¾å½¢é¢œè‰²è®¾ç½®æ–¹å¼æˆ–è®¸ä¼šä¸åŒ.
     if (item->centralAxis == KC_INVALID_DATA)
       color = item->GetColor(data, idx);
     else
@@ -1197,7 +1197,7 @@ void GraphArea::ReGatherLabel(GraphContext* ctx, DrawData& data) {
 }
 
 void GraphArea::UpdateMinMax() {
-  // ²»ÄÜÖ±½ÓÊ¹ÓÃ INT64_MAX ÒòÎª INT64_MAX = KC_INVALID_DATA
+  // ä¸èƒ½ç›´æ¥ä½¿ç”¨ INT64_MAX å› ä¸º INT64_MAX = KC_INVALID_DATA
   cacheMin_ = INT64_MAX - 1;
   cacheMax_ = INT64_MIN + 1;
 
@@ -1249,12 +1249,12 @@ void GraphArea::UpdateScales() {
   int distance = 40;
   Scalar contentHeight = GetContentHeight();
 
-  // ¿Ì¶ÈÊıÁ¿£¬ÖÁÉÙÒªÓĞÒ»¸ö
+  // åˆ»åº¦æ•°é‡ï¼Œè‡³å°‘è¦æœ‰ä¸€ä¸ª
   Scalar scaleNum = contentHeight / distance;
   if (scaleNum <= 0)
     scaleNum = 1;
 
-  // ¿Ì¶ÈÖ®¼äµÄ¼ä¸ô
+  // åˆ»åº¦ä¹‹é—´çš„é—´éš”
   DataType step = (cacheMax_ - cacheMin_) / DataType(scaleNum);
   double exponent = log10((double)step) - 1;
   int expi = (int)exponent;
@@ -1343,7 +1343,7 @@ void GraphArea::OnPaint(GraphContext* ctx, DrawData& data) {
 
   ctx->Translate({ 0, offY });
 
-  // »æÖÆ¿Ì¶ÈÏß
+  // ç»˜åˆ¶åˆ»åº¦çº¿
   Scalar width = bounds_.Width();
   ctx->SetLineWidth(3);
   ctx->SetColor(labelBackColor_);
@@ -1359,10 +1359,10 @@ void GraphArea::OnPaint(GraphContext* ctx, DrawData& data) {
   }
 
 
-  // »æÖÆÍ¼ĞÎ
+  // ç»˜åˆ¶å›¾å½¢
   OnPaintGraph(ctx, data);
 
-  // »æÖÆÊ®×Ö×¼Ïß
+  // ç»˜åˆ¶åå­—å‡†çº¿
   OnPaintCrosshair(ctx, data);
 
   ctx->Translate({ 0, -offY });
@@ -1602,8 +1602,8 @@ public:
     * ((uint16_t*)&machineCodes_[0]) = 0xB848;
     *((uint64_t*)&machineCodes_[2]) = thisPtr;
     // [@author:luo-zeqi]
-    // ÓÉÓÚÊ¹ÓÃ¸ÃÀàµÄ KChartWnd ´æÔÚĞéº¯Êı£¬ÆäÊ×µØÖ·Ëù´æµÄÖµ±»Ğéº¯Êı±í
-    // Õ¼ÓÃ£¬Òò´ËÏÂÃæÕâĞĞ»ã±à»áÆÆ»µÄÚ´æ£¬ÇÒÕâÄ¿Ç°Ã»ÓĞÒâÒå£¬ÏÈ½«Æä×¢ÊÍ¡£
+    // ç”±äºä½¿ç”¨è¯¥ç±»çš„ KChartWnd å­˜åœ¨è™šå‡½æ•°ï¼Œå…¶é¦–åœ°å€æ‰€å­˜çš„å€¼è¢«è™šå‡½æ•°è¡¨
+    // å ç”¨ï¼Œå› æ­¤ä¸‹é¢è¿™è¡Œæ±‡ç¼–ä¼šç ´åå†…å­˜ï¼Œä¸”è¿™ç›®å‰æ²¡æœ‰æ„ä¹‰ï¼Œå…ˆå°†å…¶æ³¨é‡Šã€‚
     //*((uint32_t*)&machineCodes_[10]) = 0x48088948;
     //*((uint32_t*)&machineCodes_[14]) = 0xB848C189;
     *((uint32_t*)&machineCodes_[10]) = 0x48C18948;
@@ -1658,14 +1658,16 @@ KChartWnd::KChartWnd(std::shared_ptr<DataSet> data)
   hAxis_ = new HorizontalAxis(this);
 
   data_->AddObserver(100000, [&](DataSet& data, int oldRow) {
-    int newRow = data.RowCount();
-    if (oldRow != newRow) {
-      if (endIdx_ == oldRow) {
-        endIdx_ += newRow - oldRow;
-        beginIdx_ += newRow - oldRow;
+    if (!fixedCount_) {
+      int newRow = data.RowCount();
+      if (oldRow != newRow) {
+        if (endIdx_ == oldRow) {
+          endIdx_ += newRow - oldRow;
+          beginIdx_ += newRow - oldRow;
+        }
       }
+      FitNewWidth();
     }
-    FitNewWidth();
     for (auto area : areas_)
       area->UpdateScales();
   });
@@ -1778,7 +1780,7 @@ void KChartWnd::Show(bool show) {
 }
 
 void KChartWnd::Invalidate() {
-  // TODO: ·¢ËÍÖØ»æÏûÏ¢
+  // TODO: å‘é€é‡ç»˜æ¶ˆæ¯
   RECT rect;
   rect.left = 0;
   rect.top = 0;
@@ -1915,9 +1917,9 @@ void KChartWnd::Zoom(int factor) {
 
   const float step[] = { 2, 1.5, 1 };
 
-  // ÕâÀï¿´ÆğÀ´ÓĞµãÈÃÈË×¥¿ñ, µ«ÕâÊÇÓĞ±ØÒªµÄ, ÎªÁË±£Ö¤
-  // (ÏñÀ¯ÖòÍ¼ÕâÖÖÖĞ¼ä´øÓĞ·Ö¸îÏßµÄ)Í¼ĞÎ×óÓÒ¶Ô³Æ, ÒÔ¼°Ëõ·Å
-  // ¸üÁ÷³©.
+  // è¿™é‡Œçœ‹èµ·æ¥æœ‰ç‚¹è®©äººæŠ“ç‹‚, ä½†è¿™æ˜¯æœ‰å¿…è¦çš„, ä¸ºäº†ä¿è¯
+  // (åƒèœ¡çƒ›å›¾è¿™ç§ä¸­é—´å¸¦æœ‰åˆ†å‰²çº¿çš„)å›¾å½¢å·¦å³å¯¹ç§°, ä»¥åŠç¼©æ”¾
+  // æ›´æµç•….
   if (sWidth_ < 1 || (sWidth_ == 1 && factor < 0)) {
     sWidth_ += float(factor) * 0.1f;
   }
@@ -1935,7 +1937,7 @@ void KChartWnd::Zoom(int factor) {
   if (sWidth_ <= 0)
     sWidth_ = 0.1f;
 
-  // ÓÉÓÚ¸¡µãÊı´æÔÚ¾«¶ÈÎÊÌâ, ËùÒÔÖ»ÄÜÍ¨¹ıÕâÖÖ·½Ê½ÅĞ¶ÏÏàµÈ.
+  // ç”±äºæµ®ç‚¹æ•°å­˜åœ¨ç²¾åº¦é—®é¢˜, æ‰€ä»¥åªèƒ½é€šè¿‡è¿™ç§æ–¹å¼åˆ¤æ–­ç›¸ç­‰.
   if (abs(old - sWidth_) < 1e-4) {
     return;
   }
@@ -1998,7 +2000,7 @@ void KChartWnd::FastScroll(int dir) {
 
   crosshairVisible_ = false;
 
-  // ÊÇ·ñµ½±ß½çÁË?
+  // æ˜¯å¦åˆ°è¾¹ç•Œäº†?
   if ((dir < 0 && beginIdx_ == 0)
     || (dir > 0 && endIdx_ >= data_->RowCount())) {
     return;
@@ -2139,7 +2141,7 @@ LRESULT KChartWnd::OnProcPaint(Rect rect) {
 
   gcContext_->SetTranslate({ 0 });
 
-  // Ìî³ä±³¾°
+  // å¡«å……èƒŒæ™¯
   gcContext_->SetColor(backColor_);
 
   gcContext_->FillRect(0, 0, size.width, size.height);
@@ -2175,7 +2177,7 @@ LRESULT KChartWnd::OnProcPaint(Rect rect) {
       rvAxis->OnPaint(gcContext_, data, offY);
     }
 
-    // ºáÖáÏß
+    // æ¨ªè½´çº¿
     gcContext_->SetTranslate({ 0 });
     gcContext_->SetColor(borderColor_);
     gcContext_->DrawLine(
@@ -2191,7 +2193,7 @@ LRESULT KChartWnd::OnProcPaint(Rect rect) {
 
   gcContext_->SetTranslate({ 0 });
 
-  // ×İÖáÏß
+  // çºµè½´çº¿
   Rect bounds = GetAreaBounds();
   gcContext_->SetColor(borderColor_);
   if (lvVisible_) {
