@@ -1666,8 +1666,8 @@ KChartWnd::KChartWnd(std::shared_ptr<DataSet> data)
           beginIdx_ += newRow - oldRow;
         }
       }
-      FitNewWidth();
     }
+    FitNewWidth();
     for (auto area : areas_)
       area->UpdateScales();
   });
